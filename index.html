@@ -71,12 +71,12 @@
             <h2 class="text-3xl md:text-4xl font-bold text-center mb-10 text-indigo-700 dark:text-indigo-400">What Our App Can Do</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div class="flex flex-col items-center text-center p-6 rounded-lg bg-white dark:bg-gray-700 shadow-md border border-gray-200 dark:border-gray-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock-3 text-indigo-500 mb-4"><path d="M12 22a10 0 0 1 0-20c4.09 0 8.04 1.55 11 4.5l-2 2"/><path d="M12 6v6l4 2"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock-3 text-indigo-500 mb-4"><path d="M12 22a10 10 0 0 1 0-20c4.09 0 8.04 1.55 11 4.5l-2 2"/><path d="M12 6v6l4 2"/></svg>
                     <h3 class="text-xl font-semibold mb-2">Smart Time Management</h3>
                     <p class="text-gray-600 dark:text-gray-300">AI-powered schedules for optimal study and free time.</p>
                 </div>
                 <div class="flex flex-col items-center text-center p-6 rounded-lg bg-white dark:bg-gray-700 shadow-md border border-gray-200 dark:border-gray-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap text-green-500 mb-4"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v6a2 0 0 0 2 2h8a2 0 0 0 2-2v-6"/><path d="M12 17.5v4.5"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap text-green-500 mb-4"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-6"/><path d="M12 17.5v4.5"/></svg>
                     <h3 class="text-xl font-semibold mb-2">Effortless Grade Tracking</h3>
                     <p class="text-gray-600 dark:text-gray-300">Monitor your academic progress and calculate GPA instantly.</p>
                 </div>
@@ -108,8 +108,7 @@
                     <input type="password" id="login-password" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500" required>
                 </div>
                 <div class="flex justify-end">
-                    <!-- Ensure this button is always visible -->
-                    <button type="button" id="forgot-password-link" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline px-2 py-1 -mr-2">Forgot Password?</button>
+                    <button type="button" id="forgot-password-link" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">Forgot Password?</button>
                 </div>
                 <div id="login-error-message" class="text-red-600 dark:text-red-400 text-sm hidden"></div>
                 <button type="submit" class="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200">
@@ -169,7 +168,7 @@
             </div>
             <nav class="flex flex-row md:flex-col space-x-4 md:space-x-0 md:space-y-2 w-full justify-around md:justify-start">
                 <button id="nav-dashboard" class="nav-item flex items-center space-x-3 p-3 rounded-lg transition-colors duration-200 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 w-full justify-center md:justify-start">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home"><path d="m3 9 9-7 9 7v11a2 0 0 1-2 2H5a2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                     <span class="hidden md:block text-sm font-medium">Dashboard</span>
                 </button>
                 <button id="nav-time-management" class="nav-item flex items-center space-x-3 p-3 rounded-lg transition-colors duration-200 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 w-full justify-center md:justify-start">
@@ -177,11 +176,11 @@
                     <span class="hidden md:block text-sm font-medium">Time Management</span>
                 </button>
                 <button id="nav-grade-tracker" class="nav-item flex items-center space-x-3 p-3 rounded-lg transition-colors duration-200 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 w-full justify-center md:justify-start">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucade-graduation-cap"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v6a2 0 0 0 2 2h8a2 0 0 0 2-2v-6"/><path d="M12 17.5v4.5"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucade-graduation-cap"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-6"/><path d="M12 17.5v4.5"/></svg>
                     <span class="hidden md:block text-sm font-medium">Grade Tracker</span>
                 </button>
                 <button id="nav-extracurriculars" class="nav-item flex items-center space-x-3 p-3 rounded-lg transition-colors duration-200 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 w-full justify-center md:justify-start">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users"><path d="M16 21v-2a4 0 0 0-4-4H6a4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 0 0 0-3-3.87"/><path d="M16 3.13a4 0 0 1 0 7.75"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     <span class="hidden md:block text-sm font-medium">Extracurriculars</span>
                 </button>
                 <button id="nav-calendar-sync" class="nav-item flex items-center space-x-3 p-3 rounded-lg transition-colors duration-200 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 w-full justify-center md:justify-start">
@@ -189,7 +188,7 @@
                     <span class="hidden md:block text-sm font-medium">Calendar Sync</span>
                 </button>
                 <button id="nav-settings" class="nav-item flex items-center space-x-3 p-3 rounded-lg transition-colors duration-200 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 w-full justify-center md:justify-start">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings"><path d="M12.22 2h-.44a2 0 0 0-2 2v.18a2 0 0 1-1 1.73l-.43.25a2 0 0 1-2 0l-.15-.08a2 0 0 0-2.73.73l-.22.38a2 0 0 0 .73 2.73l.15.1a2 0 0 1 0 2.73l-.15.1a2 0 0 0-.73 2.73l.22.38a2 0 0 0 2.73.73l.15-.08a2 0 0 1 2 0l.43.25a2 0 0 1 1 1.73V20a2 0 0 0 2 2h.44a2 0 0 0 2-2v-.18a2 0 0 1 1-1.73l.43-.25a2 0 0 1 2 0l.15.08a2 0 0 0 2.73-.73l.22-.38a2 0 0 0-.73-2.73l-.15-.1a2 0 0 1 0-2.73l.15-.1a2 0 0 0 .73-2.73l-.22-.38a2 0 0 0-2.73-.73l-.15.08a2 0 0 1-2 0l-.43-.25a2 0 0 1-1-1.73V4a2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2.73l-.15.1a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1 0 2.73l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                     <span class="hidden md:block text-sm font-medium">Settings</span>
                 </button>
             </nav>
@@ -212,7 +211,7 @@
                     <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
                         <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">Overall GPA</h2>
                         <p id="overall-gpa" class="text-4xl font-bold text-indigo-600 dark:text-indigo-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin inline-block mr-2"><path d="M21 12a9 0 1 1-6.219-8.56"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin inline-block mr-2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                         </p>
                     </div>
                     <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
@@ -225,12 +224,7 @@
                         <p class="text-sm text-gray-500 dark:text-gray-400">
                             AI-generated time summary will appear here to help you achieve your goals.
                         </p>
-                        <button id="generate-summary-btn" class="mt-4 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors duration-200 text-sm">
-                            Generate Summary
-                        </button>
-                        <button id="send-date-to-ai-btn" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 text-sm">
-                            Send Current Date to AI
-                        </button>
+                        <!-- Removed these buttons as AI chat is now in Time Management page -->
                         <div id="send-date-message" class="mt-2 text-sm"></div>
                     </div>
                 </div>
@@ -239,7 +233,7 @@
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
                     <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent Grades</h2>
                     <div id="recent-grades-loading" class="flex items-center justify-center py-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin mr-2"><path d="M21 12a9 0 1 1-6.219-8.56"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin mr-2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                         <span>Loading grades...</span>
                     </div>
                     <div id="recent-grades-list" class="overflow-x-auto">
@@ -249,48 +243,44 @@
                 </div>
             </div>
 
-            <!-- Time Management Page -->
+            <!-- Time Management Page (Now includes AI Chat) -->
             <div id="time-management-page" class="page-content space-y-6">
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Time Management</h1>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Time Management & AI Planner</h1>
 
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
-                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">AI-Powered Schedule Generator</h2>
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Chat with your AI Planner Assistant</h2>
                     <p class="text-gray-600 dark:text-gray-300 mb-4">
                         Describe your typical day, academic goals, and any specific commitments, and I'll generate an example schedule for you.
+                        Type "generate schedule" to get a schedule.
                     </p>
-                    <textarea
-                        id="schedule-prompt"
-                        class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500 resize-y min-h-[120px]"
-                        placeholder="E.g., 'I'm a junior with AP classes, I play soccer after school, and I need dedicated time for SAT prep. I usually wake up at 7 AM.'"
-                    ></textarea>
-                    <button
-                        id="generate-schedule-btn"
-                        class="mt-4 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200 flex items-center justify-center"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin mr-2 hidden" id="generate-schedule-spinner"><path d="M21 12a9 0 1 1-6.219-8.56"/></svg>
-                        Generate Schedule
-                    </button>
+                    
+                    <!-- AI Chat Output Area -->
+                    <div id="ai-chat-output" class="border border-gray-300 dark:border-gray-600 rounded-lg p-4 h-80 overflow-y-auto mb-4 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 flex flex-col-reverse">
+                        <!-- AI and user messages will appear here -->
+                    </div>
 
-                    <div id="schedule-error" class="mt-4 p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded-lg hidden">
+                    <!-- AI Chat Input Area -->
+                    <div class="flex space-x-2">
+                        <textarea
+                            id="ai-chat-input"
+                            class="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500 resize-y min-h-[50px] max-h-[150px]"
+                            placeholder="Type your message here..."
+                        ></textarea>
+                        <button
+                            id="send-ai-chat-btn"
+                            class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200 flex items-center justify-center"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send mr-2"><path d="m22 2-7 20-4-9-9-4 20-7Z"/><path d="M15 15l4 4"/></svg>
+                            Send
+                        </button>
+                    </div>
+                    <div id="ai-chat-loading-spinner" class="mt-2 flex items-center justify-center text-gray-700 dark:text-gray-300 hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin mr-2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                        <span>AI is thinking...</span>
+                    </div>
+                    <div id="ai-chat-error" class="mt-4 p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded-lg hidden">
                         <!-- Error messages will appear here -->
                     </div>
-
-                    <div id="generated-schedule-output" class="mt-6 p-6 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 shadow-inner hidden">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Generated Schedule:</h3>
-                        <div id="schedule-content" class="prose dark:prose-invert max-w-none">
-                            <!-- AI generated schedule will appear here -->
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
-                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">AI Time Summary</h2>
-                    <p class="text-gray-600 dark:text-gray-300 mb-4">
-                        This section will provide an AI-generated summary of your time usage and suggestions to optimize it based on your goals.
-                    </p>
-                    <button id="generate-time-summary-btn" class="px-6 py-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors duration-200">
-                        Generate Time Summary
-                    </button>
                 </div>
             </div>
 
@@ -415,7 +405,7 @@
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
                     <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Your Grades</h2>
                     <div id="grades-list-loading" class="flex items-center justify-center py-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin mr-2"><path d="M21 12a9 0 1 1-6.219-8.56"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin mr-2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                         <span>Loading grades...</span>
                     </div>
                     <div id="grades-table-container" class="overflow-x-auto mb-6 hidden">
@@ -511,7 +501,7 @@
                             <thead class="bg-gray-50 dark:bg-gray-700">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Letter Grade</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Grade Points (4.0 scale)</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Grade Points</th>
                                 </tr>
                             </thead>
                             <tbody id="gpa-scale-table-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -523,26 +513,6 @@
                         Save GPA Settings
                     </button>
                     <div id="gpa-settings-message" class="mt-2 text-sm hidden"></div>
-                </div>
-
-                <!-- AP Class Weighting Configuration -->
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
-                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">AP Class Weighting</h2>
-                    <p class="text-gray-600 dark:text-gray-300 mb-4">Choose how AP classes affect your GPA calculation.</p>
-                    <div class="flex flex-col space-y-3">
-                        <div>
-                            <input type="radio" id="ap-weighting-standard" name="apWeighting" value="standard" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600">
-                            <label for="ap-weighting-standard" class="ml-2 text-gray-900 dark:text-gray-100">Standard (4.0 scale - no extra weighting for AP)</label>
-                        </div>
-                        <div>
-                            <input type="radio" id="ap-weighting-weighted" name="apWeighting" value="weighted" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600">
-                            <label for="ap-weighting-weighted" class="ml-2 text-gray-900 dark:text-gray-100">Weighted (5.0 scale - +1.0 point for AP classes)</label>
-                        </div>
-                    </div>
-                    <button id="save-ap-weighting-btn" class="mt-4 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200">
-                        Save AP Weighting
-                    </button>
-                    <div id="ap-weighting-message" class="mt-2 text-sm hidden"></div>
                 </div>
 
                 <!-- Percentage to Letter Grade Rules -->
