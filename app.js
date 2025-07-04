@@ -111,6 +111,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const recentGradesLoadingDashboard = document.getElementById('recent-grades-loading');
     const noRecentGradesDashboard = document.getElementById('no-recent-grades');
 
+    // Settings page elements
+    const deleteUserDataBtn = document.getElementById('delete-user-data-btn');
+    const deleteUserDataMessage = document.getElementById('delete-user-data-message');
+
 
     // Function to display a specific page
     const displayPage = (pageId) => {
@@ -727,6 +731,46 @@ document.addEventListener('DOMContentLoaded', async () => {
             modal.classList.add('hidden');
         });
     }
+
+    // --- Delete User Data Functionality ---
+    deleteUserDataBtn.addEventListener('click', async () => {
+        const userId = auth.currentUser ? auth.currentUser.uid : null;
+        if (!userId) {
+            showCustomAlert("You must be logged in to delete your data.");
+            return;
+        }
+
+        showCustomConfirm("WARNING: This will permanently delete ALL your grade data. This action cannot be undone. Are you sure?", async () => {
+            deleteUserDataMessage.classList.add('hidden');
+            try {
+                // Get all documents in the user's grades subcollection
+                const gradesCollectionRef = collection(db, `users/${userId}/grades`);
+                const querySnapshot = await getDocs(gradesCollectionRef);
+
+                // Create a batch to delete all documents efficiently
+                const deletePromises = [];
+                querySnapshot.forEach((doc) => {
+                    deletePromises.push(deleteDoc(doc.ref));
+                });
+
+                await Promise.all(deletePromises); // Execute all deletions concurrently
+
+                // Optionally, if you also want to delete the user's authentication account:
+                // This requires re-authentication or a Cloud Function for security reasons.
+                // For a client-side solution, the user might need to sign in again immediately before this call.
+                // await auth.currentUser.delete(); // This will likely fail without recent re-authentication
+
+                showCustomAlert("Your data has been successfully deleted. You will now be logged out.");
+                await signOut(auth); // Log out the user after data deletion
+            } catch (e) {
+                console.error("Error deleting user data:", e);
+                deleteUserDataMessage.textContent = `Error deleting data: ${e.message}. Please try again or contact support.`;
+                deleteUserDataMessage.classList.remove('hidden');
+                showCustomAlert("Error deleting data. Please check console for details.");
+            }
+        });
+    });
+
 
     // Initial calls if user is already authenticated on page load
     // This block handles the state when the page first loads.
