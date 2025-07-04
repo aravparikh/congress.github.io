@@ -1,128 +1,70 @@
-# Congressional-App
-https://aravparikh.github.io/congress.github.io/
-Overview
-The Student Planner App is a comprehensive time management and academic tracking tool designed specifically for high school students. It aims to help students stay organized, improve their academic performance, and explore extracurricular opportunities effectively.
+#Congressional-App: Your High School Academic Sidekick
+Website: https://aravparikh.github.io/congress.github.io/
 
-Features
-Dynamic Landing Page: A modern, responsive landing page with a clear call to action, showcasing the app's core features. Includes "Login" and "Sign Up" placeholders for future authentication.
+The Congressional-App is a powerful tool designed to help high school students conquer their academics and manage their time effectively. It's your personal assistant for staying organized, boosting your grades, and even exploring extracurriculars.
 
-Persistent Session: Once a user clicks "Get Started," the app remembers their preference and directly loads the Dashboard on subsequent visits. A "Logout" option is available to return to the landing page.
+What It Does
+Smart Dashboard: Get a quick glance at your GPA and recent academic activity.
 
-Dashboard: Provides a quick overview of the user's overall GPA and recent academic activities.
+AI-Powered Schedules: Tell our app your routine and goals, and it'll use Google's Gemini AI to craft a personalized daily schedule.
 
-AI-Powered Time Management:
+Effortless Grade Tracking: Easily add, view, and delete grades. It automatically calculates your course averages and overall GPA, all saved securely with Firebase Firestore.
 
-Schedule Generator: Users can input their daily routine, academic goals, and commitments, and the app utilizes Google's Gemini AI to generate a personalized, detailed daily schedule.
+Future-Ready: We're building out exciting features like AI-driven time insights, extracurricular suggestions, and seamless calendar syncing.
 
-AI Time Summary (Placeholder): Future functionality to provide AI-generated insights and suggestions for optimizing time usage.
+Looks Great Anywhere: Built with Tailwind CSS, it works perfectly on your phone, tablet, or desktop.
 
-Grade Tracker:
+Secure & Simple: Uses Firebase for secure, real-time data storage and anonymous sign-in.
 
-Allows users to easily add, view, and delete grades for various courses and assignments.
-
-Automatically calculates individual course averages and an overall GPA.
-
-Data is stored persistently using Firebase Firestore.
-
-Extracurricular Roadmap (Placeholder): Future functionality to suggest extracurricular activities based on user interests and help them explore these opportunities.
-
-Calendar Synchronization (Placeholder): Future functionality to sync generated schedules with external calendar services like Google Calendar and Microsoft Outlook Calendar.
-
-Responsive Design: Built with Tailwind CSS, ensuring a seamless experience across various devices (mobile, tablet, desktop).
-
-Firebase Integration: Utilizes Firebase Authentication (anonymous sign-in) and Firestore for secure and real-time data storage.
-
-Technologies Used
+Tech Stack
 Frontend: HTML5, CSS3 (Tailwind CSS), JavaScript (Vanilla JS)
 
 Backend/Database: Google Firebase (Authentication, Firestore)
 
-AI Integration: Google Gemini API (gemini-2.0-flash model)
+AI: Google Gemini API (gemini-2.0-flash model)
 
-Setup and Installation
-This application is designed to run within a Google Canvas environment, which provides the necessary Firebase configuration and authentication tokens automatically.
+How to Get Started (for Developers)
+This app is designed to run within a Google Canvas environment.
 
-To run this application:
+Be in Canvas: Make sure you're in a Google Canvas setup.
 
-Ensure you are in a Google Canvas environment.
+Paste Code: Simply copy and paste the provided HTML into your index.html file in the Canvas editor.
 
-Paste the provided HTML code into the index.html file in your Canvas editor.
+No Fuss: Firebase SDKs and necessary configurations are automatically handled by Canvas. Just load it up in the preview!
 
-The necessary Firebase SDKs are loaded via CDN, and global variables (__app_id, __firebase_config, __initial_auth_token) are automatically injected by the Canvas environment.
+Using the App
+First Visit: You'll land on our welcoming page. Hit "Get Started" to dive into your Dashboard, or "See Features" for a quick scroll-down overview. (Login/Sign Up are coming soon!)
 
-The application should load directly in the preview pane.
+Your Dashboard: See your GPA and recent grades at a glance.
 
-Note: No local installation or complex setup is required outside of the Canvas environment.
+Navigation: Use the sidebar to jump between your Dashboard, Time Management, Grade Tracker, and future sections like Extracurriculars and Calendar Sync.
 
-Usage
-Landing Page:
+Time Management: Describe your schedule needs, click "Generate Schedule," and let the AI do its magic.
 
-Upon first load, you will see the landing page.
+Grade Tracker: Add new grades easily. Watch your course averages and GPA update automatically. Delete grades with a simple click.
 
-Click "Get Started" to proceed to the Dashboard.
+Future Features: "Extracurriculars" and "Calendar Sync" are placeholders for now, with more to come!
 
-Click "See Features" to scroll down and view a brief overview of the app's capabilities.
+Log Out: Click "Logout" in the sidebar to return to the landing page.
 
-"Login" and "Sign Up" buttons are placeholders; clicking them will show a "coming soon" message.
+What's Next? (Roadmap)
+We're constantly improving! Here's a peek at what's coming:
 
-Dashboard:
+Full User Accounts: Robust login options (email/password, Google Sign-In).
 
-View your overall GPA and a summary of recent grades.
+AI Time Insights: Personalized advice from the AI to optimize your time.
 
-"Upcoming Tasks" and "AI Time Summary" are placeholders for future features.
+Extracurricular Guidance: AI suggestions based on your interests and goals, plus tracking.
 
-Navigation:
+Calendar Syncing: Seamless integration with Google Calendar and Microsoft Outlook.
 
-Use the sidebar on the left to navigate between "Dashboard," "Time Management," "Grade Tracker," "Extracurriculars," and "Calendar Sync."
+Task Management: A dedicated section for assignments and daily tasks.
 
-Time Management:
+Smart Notifications: Reminders for deadlines and study times.
 
-Enter a detailed prompt about your schedule needs into the text area.
+Progress Visualization: See your academic and extracurricular progress with graphs.
 
-Click "Generate Schedule" to get an AI-powered example schedule.
-
-"AI Time Summary" is a placeholder.
-
-Grade Tracker:
-
-Fill out the "Add New Grade" form with course, assignment, score, and date.
-
-Click "Add Grade" to save it to your personal Firestore database.
-
-View all your recorded grades in the table below.
-
-Click the trash icon next to a grade to delete it.
-
-See calculated course averages at the bottom.
-
-Extracurriculars & Calendar Sync:
-
-These sections are currently placeholders. Clicking their buttons will display "coming soon" messages.
-
-Logout:
-
-Click the "Logout" button in the sidebar to clear your session and return to the landing page.
-
-Future Enhancements (Roadmap)
-Full Authentication: Implement robust user authentication (email/password, Google Sign-In) using Firebase Auth.
-
-AI Time Summary: Develop the AI to provide personalized time management insights and actionable advice.
-
-Extracurricular Roadmap:
-
-Integrate AI to suggest extracurriculars based on user profiles (interests, academic strengths, goals).
-
-Allow users to track their participation and progress in activities.
-
-Calendar Synchronization: Implement actual integration with Google Calendar and Microsoft Outlook Calendar for seamless schedule management.
-
-Task Management: Add a dedicated section for managing daily tasks and assignments, potentially linked to the generated schedules.
-
-Notifications: Implement in-app notifications for deadlines, study reminders, or new AI insights.
-
-Progress Tracking: Visualize academic and extracurricular progress over time with charts and graphs.
-
-User Profiles: Allow users to create and manage detailed profiles, including academic goals, interests, and preferences.
+Detailed Profiles: Create and manage your academic goals, interests, and preferences.
 
 License
-This project is open-source and available under the MIT License.
+This project is open-source under the MIT License.
