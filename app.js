@@ -12,12 +12,13 @@ let gradesData = []; // To store fetched grades
 // IMPORTANT: Replace this with YOUR OWN Firebase project configuration
 // You can find this in your Firebase project settings (Project settings -> General -> Your apps -> Firebase SDK snippet -> Config)
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyBMDzrZurHNHR_5QMIGzCOisVoAxOJ0d08",
+  authDomain: "congressional-app-challe-eb3be.firebaseapp.com",
+  projectId: "congressional-app-challe-eb3be",
+  storageBucket: "congressional-app-challe-eb3be.firebasestorage.app",
+  messagingSenderId: "182459835746",
+  appId: "1:182459835746:web:8ae5e7a988dc88bb7e383b",
+  measurementId: "G-JRLCDXSSLT"
 };
 
 // Utility function to show messages
