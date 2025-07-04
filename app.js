@@ -12,13 +12,13 @@ let gradesData = []; // To store fetched grades
 // IMPORTANT: Replace this with YOUR OWN Firebase project configuration
 // You can find this in your Firebase project settings (Project settings -> General -> Your apps -> Firebase SDK snippet -> Config)
 const firebaseConfig = {
-  apiKey: "AIzaSyBMDzrZurHNHR_5QMIGzCOisVoAxOJ0d08",
-  authDomain: "congressional-app-challe-eb3be.firebaseapp.com",
-  projectId: "congressional-app-challe-eb3be",
-  storageBucket: "congressional-app-challe-eb3be.firebasestorage.app",
-  messagingSenderId: "182459835746",
-  appId: "1:182459835746:web:8ae5e7a988dc88bb7e383b",
-  measurementId: "G-JRLCDXSSLT"
+    apiKey: "AIzaSyBMDzrZurHNHR_5QMIGzCOisVoAxOJ0d08",
+    authDomain: "congressional-app-challe-eb3be.firebaseapp.com",
+    projectId: "congressional-app-challe-eb3be",
+    storageBucket: "congressional-app-challe-eb3be.firebasestorage.app",
+    messagingSenderId: "182459835746",
+    appId: "1:182459835746:web:8ae5e7a988dc88bb7e383b",
+    measurementId: "G-JRLCDXSSLT"
 };
 
 // Utility function to show messages
@@ -139,7 +139,6 @@ function setupFirestoreListeners() {
     }
 
     // Firestore collection path for grades (using user-specific data)
-    // For GitHub Pages, we remove the 'artifacts/${appId}' prefix as it's Canvas-specific.
     const gradesCollectionRef = collection(db, `users/${currentUserId}/grades`);
     const q = query(gradesCollectionRef);
 
@@ -160,8 +159,20 @@ function setupFirestoreListeners() {
 // --- Dashboard Logic ---
 function calculateOverallGPA() {
     if (gradesData.length === 0) return "N/A";
-    const totalPoints = gradesData.reduce((sum, grade) => sum + (parseFloat(grade.score) || 0), 0);
-    return (totalPoints / gradesData.length).toFixed(2);
+
+    let totalWeightedScore = 0;
+    let totalWeight = 0;
+
+    gradesData.forEach(grade => {
+        const score = parseFloat(grade.score) || 0;
+        const weight = parseFloat(grade.weight) || 0; // Ensure weight is a number
+
+        totalWeightedScore += (score * weight);
+        totalWeight += weight;
+    });
+
+    if (totalWeight === 0) return "N/A"; // Avoid division by zero if no weighted grades
+    return (totalWeightedScore / totalWeight).toFixed(2);
 }
 
 function renderDashboard() {
@@ -188,6 +199,9 @@ function renderDashboard() {
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                             Score
                         </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Weight
+                        </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider rounded-tr-lg">
                             Date
                         </th>
@@ -199,6 +213,7 @@ function renderDashboard() {
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">${grade.course}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${grade.assignment}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${grade.score}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${grade.weight || 'N/A'}%</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${new Date(grade.date).toLocaleDateString()}</td>
                         </tr>
                     `).join('')}
@@ -240,7 +255,9 @@ async function generateSchedule() {
         const chatHistory = [];
         chatHistory.push({ role: "user", parts: [{ text: `Generate a detailed high school student schedule based on the following needs: ${prompt}. Include typical school hours, study time, breaks, and potential extracurriculars. Be realistic and provide a daily breakdown.` }] });
         const payload = { contents: chatHistory };
-        const apiKey = firebaseConfig.apiKey; // Use the API key from your firebaseConfig
+        // For security, the API key for Gemini is still hardcoded for this client-side app.
+        // For production, consider a server-side proxy or a build step to inject it.
+        const apiKey = firebaseConfig.apiKey; 
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
         const response = await fetch(apiUrl, {
@@ -295,10 +312,13 @@ function renderGrades() {
 
         gradesData.forEach(grade => {
             const row = gradesTableBody.insertRow();
+            // Ensure weight is displayed, default to 1 if not present (for older entries)
+            const displayWeight = grade.weight !== undefined ? `${grade.weight}%` : 'N/A';
             row.innerHTML = `
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">${grade.course}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${grade.assignment}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${grade.score}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${displayWeight}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${new Date(grade.date).toLocaleDateString()}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button data-id="${grade.id}" class="delete-grade-btn text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200 transition-colors duration-200" title="Delete Grade">
@@ -312,8 +332,18 @@ function renderGrades() {
         const uniqueCourses = [...new Set(gradesData.map(g => g.course))];
         uniqueCourses.forEach(course => {
             const courseGrades = gradesData.filter(g => g.course.toLowerCase() === course.toLowerCase());
-            const totalScore = courseGrades.reduce((sum, g) => sum + parseFloat(g.score), 0);
-            const average = (totalScore / courseGrades.length).toFixed(2);
+            
+            let totalWeightedScore = 0;
+            let totalWeight = 0;
+
+            courseGrades.forEach(grade => {
+                const score = parseFloat(grade.score) || 0;
+                const weight = parseFloat(grade.weight) || 0;
+                totalWeightedScore += (score * weight);
+                totalWeight += weight;
+            });
+
+            const average = (totalWeight === 0) ? "N/A" : (totalWeightedScore / totalWeight).toFixed(2);
 
             const li = document.createElement('li');
             li.className = "flex justify-between items-center text-gray-700 dark:text-gray-300";
@@ -336,16 +366,22 @@ async function addGrade(event) {
     const course = document.getElementById('grade-course').value.trim();
     const assignment = document.getElementById('grade-assignment').value.trim();
     const score = document.getElementById('grade-score').value.trim();
+    const weight = document.getElementById('grade-weight').value.trim(); // Get weight
     const date = document.getElementById('grade-date').value.trim();
 
-    if (!course || !assignment || !score || !date) {
+    if (!course || !assignment || !score || !weight || !date) {
         showMessage("Please fill in all fields.", "error");
         return;
     }
-    if (isNaN(parseFloat(score))) {
-        showMessage("Score must be a number.", "error");
+    if (isNaN(parseFloat(score)) || parseFloat(score) < 0 || parseFloat(score) > 100) {
+        showMessage("Score must be a number between 0 and 100.", "error");
         return;
     }
+    if (isNaN(parseFloat(weight)) || parseFloat(weight) < 0 || parseFloat(weight) > 100) {
+        showMessage("Weight must be a number between 0 and 100.", "error");
+        return;
+    }
+
 
     try {
         // Firestore collection path for grades (using user-specific data)
@@ -354,12 +390,14 @@ async function addGrade(event) {
             course: course,
             assignment: assignment,
             score: parseFloat(score),
+            weight: parseFloat(weight), // Save weight as a number
             date: date,
             timestamp: new Date().toISOString()
         });
         showMessage("Grade added successfully!", "success");
         document.getElementById('add-grade-form').reset(); // Reset form
         document.getElementById('grade-date').value = new Date().toISOString().split('T')[0]; // Set default date again
+        document.getElementById('grade-weight').value = "1"; // Reset weight to default
     } catch (error) {
         console.error("Error adding grade:", error);
         showMessage("Failed to add grade.", "error");
