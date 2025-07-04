@@ -2,7 +2,7 @@
 
 // Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 // Import Firestore modules
 import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -63,6 +63,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const closeSignupModalBtn = document.getElementById('close-signup-modal');
     const switchToSignupBtn = document.getElementById('switch-to-signup');
     const switchToLoginBtn = document.getElementById('switch-to-login');
+    const loginGoogleBtn = document.getElementById('login-google-btn'); // New: Get Google login button
+    const signupGoogleBtn = document.getElementById('signup-google-btn'); // New: Get Google signup button
+
 
     // Navigation buttons
     const navDashboard = document.getElementById('nav-dashboard');
@@ -235,6 +238,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // --- Firebase Auth Forms (simplified for demonstration) ---
+    // These are for email/password, which are currently simulated.
     document.getElementById('login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('login-email').value;
@@ -242,14 +246,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const errorMessage = document.getElementById('login-error-message');
         errorMessage.classList.add('hidden');
         try {
-            // In a real app, you'd use signInWithEmailAndPassword
+            // In a real app, you'd use signInWithEmailAndPassword(auth, email, password);
             console.log("Login attempt (email/password not fully implemented for demo)");
             // For now, just simulate success and switch to app layout
             loginModal.classList.add('hidden');
             mainAppLayout.classList.remove('hidden');
             landingPage.classList.add('hidden');
             displayPage('dashboard-page');
-            // A real login would involve: await signInWithEmailAndPassword(auth, email, password);
         } catch (error) {
             errorMessage.textContent = error.message;
             errorMessage.classList.remove('hidden');
@@ -263,19 +266,60 @@ document.addEventListener('DOMContentLoaded', async () => {
         const errorMessage = document.getElementById('signup-error-message');
         errorMessage.classList.add('hidden');
         try {
-            // In a real app, you'd use createUserWithEmailAndPassword
+            // In a real app, you'd use createUserWithEmailAndPassword(auth, email, password);
             console.log("Signup attempt (email/password not fully implemented for demo)");
             // For now, just simulate success and switch to app layout
             signupModal.classList.add('hidden');
             mainAppLayout.classList.remove('hidden');
             landingPage.classList.add('hidden');
             displayPage('dashboard-page');
-            // A real signup would involve: await createUserWithEmailAndPassword(auth, email, password);
         } catch (error) {
             errorMessage.textContent = error.message;
             errorMessage.classList.remove('hidden');
         }
     });
+
+    // --- Google Sign-In/Sign-Up Buttons ---
+    // Create a Google Auth provider instance
+    const googleProvider = new GoogleAuthProvider();
+
+    // Event listener for Google Login button
+    loginGoogleBtn.addEventListener('click', async () => {
+        try {
+            await signInWithPopup(auth, googleProvider);
+            // onAuthStateChanged listener will handle UI update upon successful sign-in
+            loginModal.classList.add('hidden'); // Hide modal if it's still open
+        } catch (error) {
+            console.error("Google Login Error:", error);
+            // Handle specific errors for Google Sign-In
+            let errorMessage = "Google Sign-In failed. Please try again.";
+            if (error.code === 'auth/popup-closed-by-user') {
+                errorMessage = "Google Sign-In window closed. Please try again.";
+            } else if (error.code === 'auth/cancelled-popup-request') {
+                errorMessage = "Another sign-in request is in progress. Please try again.";
+            }
+            showCustomAlert(errorMessage); // Use your custom alert
+        }
+    });
+
+    // Event listener for Google Signup button (can use the same signInWithPopup)
+    signupGoogleBtn.addEventListener('click', async () => {
+        try {
+            await signInWithPopup(auth, googleProvider);
+            // onAuthStateChanged listener will handle UI update upon successful sign-in
+            signupModal.classList.add('hidden'); // Hide modal if it's still open
+        } catch (error) {
+            console.error("Google Signup Error:", error);
+            let errorMessage = "Google Sign-Up failed. Please try again.";
+            if (error.code === 'auth/popup-closed-by-user') {
+                errorMessage = "Google Sign-Up window closed. Please try again.";
+            } else if (error.code === 'auth/cancelled-popup-request') {
+                errorMessage = "Another sign-up request is in progress. Please try again.";
+            }
+            showCustomAlert(errorMessage); // Use your custom alert
+        }
+    });
+
 
     // Logout button
     logoutBtn.addEventListener('click', async () => {
