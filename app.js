@@ -1,13 +1,13 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { 
-    getAuth, 
-    signInAnonymously, 
-    onAuthStateChanged, 
+import {
+    getAuth,
+    signInAnonymously,
+    onAuthStateChanged,
     signOut,
-    createUserWithEmailAndPassword, // Added for sign-up
-    signInWithEmailAndPassword,     // Added for login
-    GoogleAuthProvider,             // Added for Google Sign-in
-    signInWithPopup                 // Added for Google Sign-in
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    GoogleAuthProvider,
+    signInWithPopup
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, doc, addDoc, onSnapshot, query, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -161,7 +161,7 @@ async function initializeFirebase() {
 // --- Authentication Functions ---
 async function handleSignUp(event) {
     event.preventDefault();
-    hideAuthError('signup-error-message');
+    hideAuthError('signup-error-message'); // Always hide previous errors on new attempt
     const email = document.getElementById('signup-email').value;
     const password = document.getElementById('signup-password').value;
 
@@ -169,7 +169,7 @@ async function handleSignUp(event) {
         await createUserWithEmailAndPassword(auth, email, password);
         // User is automatically signed in after creation
         localStorage.setItem('appStarted', 'true');
-        showPage('dashboard-page');
+        showPage('dashboard-page'); // Redirect to dashboard on successful sign-up
     } catch (error) {
         let errorMessage = "Failed to sign up.";
         if (error.code === 'auth/email-already-in-use') {
@@ -178,6 +178,8 @@ async function handleSignUp(event) {
             errorMessage = "Password should be at least 6 characters.";
         } else if (error.code === 'auth/invalid-email') {
             errorMessage = "Invalid email address.";
+        } else if (error.code === 'auth/operation-not-allowed') {
+            errorMessage = "Email/Password sign-in is not enabled in Firebase. Please enable it in your Firebase project settings.";
         }
         showAuthError('signup-error-message', errorMessage);
         console.error("Sign up error:", error);
@@ -186,20 +188,22 @@ async function handleSignUp(event) {
 
 async function handleLogin(event) {
     event.preventDefault();
-    hideAuthError('login-error-message');
+    hideAuthError('login-error-message'); // Always hide previous errors on new attempt
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
 
     try {
         await signInWithEmailAndPassword(auth, email, password);
         localStorage.setItem('appStarted', 'true');
-        showPage('dashboard-page');
+        showPage('dashboard-page'); // Redirect to dashboard on successful login
     } catch (error) {
         let errorMessage = "Failed to log in.";
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
             errorMessage = "Invalid email or password.";
         } else if (error.code === 'auth/invalid-email') {
             errorMessage = "Invalid email address.";
+        } else if (error.code === 'auth/operation-not-allowed') {
+            errorMessage = "Email/Password sign-in is not enabled in Firebase. Please enable it in your Firebase project settings.";
         }
         showAuthError('login-error-message', errorMessage);
         console.error("Login error:", error);
@@ -222,6 +226,8 @@ async function handleGoogleSignIn(event) {
             errorMessage = "Google sign-in popup was closed.";
         } else if (error.code === 'auth/cancelled-popup-request') {
             errorMessage = "Google sign-in was cancelled.";
+        } else if (error.code === 'auth/operation-not-allowed') {
+            errorMessage = "Google sign-in is not enabled in Firebase. Please enable it in your Firebase project settings.";
         }
         showAuthError('login-error-message', errorMessage); // Display error on login modal
         console.error("Google sign-in error:", error);
@@ -427,7 +433,7 @@ function renderGrades() {
         const uniqueCourses = [...new Set(gradesData.map(g => g.course))];
         uniqueCourses.forEach(course => {
             const courseGrades = gradesData.filter(g => g.course.toLowerCase() === course.toLowerCase());
-            
+
             let totalWeightedScore = 0;
             let totalWeight = 0;
 
