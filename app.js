@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const landingPage = document.getElementById('landing-page');
     const mainAppLayout = document.getElementById('main-app-layout');
     const userIdDisplay = document.getElementById('user-id-display');
+    const sidebarAppTitle = document.getElementById('sidebar-app-title'); // Get the sidebar title element
 
     // Modals and their buttons
     const loginModal = document.getElementById('login-modal');
@@ -339,6 +340,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     navCalendarSync.addEventListener('click', () => displayPage('calendar-sync-page'));
     navSettings.addEventListener('click', () => displayPage('settings-page'));
 
+    // Add event listener for the sidebar app title to redirect to dashboard
+    sidebarAppTitle.addEventListener('click', () => displayPage('dashboard-page'));
+
+
     // --- AI Chat Functionality ---
     sendAiChatBtn.addEventListener('click', sendAIChatMessage);
     aiChatInput.addEventListener('keypress', (e) => {
@@ -586,8 +591,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const userId = auth.currentUser ? auth.currentUser.uid : null;
         if (!userId) return;
 
-        const courseId = event.currentTarget.dataset.id;
         showCustomConfirm("Are you sure you want to delete this course?", async () => {
+            const courseId = event.currentTarget.dataset.id;
             try {
                 await deleteDoc(doc(db, `users/${userId}/grades`, courseId));
                 await loadGrades(); // Reload grades after deletion
