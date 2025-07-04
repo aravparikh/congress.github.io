@@ -16,9 +16,6 @@ const firebaseConfig = {
   measurementId: "G-JRLCDXSSLT"
 };
 // Global Firebase variables (provided by the Canvas environment)
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
 let app;
 let auth;
