@@ -87,7 +87,8 @@ def generate_response(user_text: str, max_tokens: int = 512) -> str:
     except Exception as err:
         # Log the full error for debugging on the server side
         print(f"Error calling OpenAI API: {err}")
-        return f"[ERROR] Failed to generate response: {err}"
+        # Return a generic error message to avoid exposing sensitive details
+        return "[ERROR] An internal server error occurred."
 
 # ───────────────────────────────────────────────
 # 3.  Flask API Endpoint
@@ -110,7 +111,8 @@ def handle_generate_response():
 
     # Check if the response contains an error from the AI helper
     if response_text.startswith("[ERROR]"):
-        return jsonify({"error": response_text}), 500
+        # Return a generic error message to the client
+        return jsonify({"error": "Failed to generate response due to an internal server error. Please try again later."}), 500
     
     return jsonify({"response": response_text})
 
