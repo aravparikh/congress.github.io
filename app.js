@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, doc, setDoc, addDoc, getDocs, onSnapshot, query, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, collection, doc, addDoc, onSnapshot, query, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Global variables for Firebase instances and user data
 let app;
@@ -9,10 +9,16 @@ let auth;
 let currentUserId = null;
 let gradesData = []; // To store fetched grades
 
-// Get global variables from Canvas environment
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+// IMPORTANT: Replace this with YOUR OWN Firebase project configuration
+// You can find this in your Firebase project settings (Project settings -> General -> Your apps -> Firebase SDK snippet -> Config)
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
+};
 
 // Utility function to show messages
 function showMessage(message, type) {
@@ -90,11 +96,9 @@ async function initializeFirebase() {
         // Check if the user has previously "started" the app
         const appStarted = localStorage.getItem('appStarted');
 
-        if (initialAuthToken) {
-            await signInWithCustomToken(auth, initialAuthToken);
-        } else {
-            await signInAnonymously(auth);
-        }
+        // For GitHub Pages, we'll use anonymous sign-in by default
+        // If you implement email/password or other auth, you'd replace this.
+        await signInAnonymously(auth);
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -102,7 +106,8 @@ async function initializeFirebase() {
                 document.getElementById('user-id-display').innerHTML = `User ID: <span class="font-mono break-all">${currentUserId}</span>`;
                 setupFirestoreListeners();
             } else {
-                currentUserId = crypto.randomUUID(); // Fallback for anonymous
+                // If for some reason anonymous sign-in fails or user is null, generate a random ID
+                currentUserId = crypto.randomUUID();
                 document.getElementById('user-id-display').innerHTML = `User ID: <span class="font-mono break-all">${currentUserId}</span>`;
                 setupFirestoreListeners();
             }
@@ -132,8 +137,9 @@ function setupFirestoreListeners() {
         return;
     }
 
-    // Listen for grades data
-    const gradesCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/grades`);
+    // Firestore collection path for grades (using user-specific data)
+    // For GitHub Pages, we remove the 'artifacts/${appId}' prefix as it's Canvas-specific.
+    const gradesCollectionRef = collection(db, `users/${currentUserId}/grades`);
     const q = query(gradesCollectionRef);
 
     onSnapshot(q, (snapshot) => {
@@ -233,7 +239,7 @@ async function generateSchedule() {
         const chatHistory = [];
         chatHistory.push({ role: "user", parts: [{ text: `Generate a detailed high school student schedule based on the following needs: ${prompt}. Include typical school hours, study time, breaks, and potential extracurriculars. Be realistic and provide a daily breakdown.` }] });
         const payload = { contents: chatHistory };
-        const apiKey = ""; // Canvas will provide this if empty for gemini-2.0-flash
+        const apiKey = firebaseConfig.apiKey; // Use the API key from your firebaseConfig
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
         const response = await fetch(apiUrl, {
@@ -341,7 +347,8 @@ async function addGrade(event) {
     }
 
     try {
-        const gradesCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/grades`);
+        // Firestore collection path for grades (using user-specific data)
+        const gradesCollectionRef = collection(db, `users/${currentUserId}/grades`);
         await addDoc(gradesCollectionRef, {
             course: course,
             assignment: assignment,
@@ -364,7 +371,8 @@ async function deleteGrade(gradeId) {
         return;
     }
     try {
-        const gradeDocRef = doc(db, `artifacts/${appId}/users/${currentUserId}/grades`, gradeId);
+        // Firestore document path for deleting a grade
+        const gradeDocRef = doc(db, `users/${currentUserId}/grades`, gradeId);
         await deleteDoc(gradeDocRef);
         showMessage("Grade deleted successfully!", "success");
     } catch (error) {
