@@ -8,9 +8,9 @@ import {
     signInWithEmailAndPassword,
     GoogleAuthProvider,
     signInWithPopup,
-    sendPasswordResetEmail // Added for password reset
+    sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, doc, addDoc, onSnapshot, query, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, collection, doc, addDoc, onSnapshot, query, deleteDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Global variables for Firebase instances and user data
 let app;
@@ -18,6 +18,37 @@ let db;
 let auth;
 let currentUserId = null;
 let gradesData = []; // To store fetched grades
+
+// Default GPA breakdown and percentage to letter grade rules
+// These will be used if no custom settings are found in Firestore for a user
+const defaultGpaBreakdown = {
+    "A+": 4.3, "A": 4.0, "A-": 3.7,
+    "B+": 3.3, "B": 3.0, "B-": 2.7,
+    "C+": 2.3, "C": 2.0, "C-": 1.7,
+    "D+": 1.3, "D": 1.0, "D-": 0.7,
+    "F": 0.0
+};
+
+// Ordered from highest to lowest percentage for correct lookup
+const defaultPercentageToLetterGradeRules = [
+    { grade: "A+", min: 97, max: 100 },
+    { grade: "A", min: 93, max: 96 },
+    { grade: "A-", min: 90, max: 92 },
+    { grade: "B+", min: 87, max: 89 },
+    { grade: "B", min: 83, max: 86 },
+    { grade: "B-", min: 80, max: 82 },
+    { grade: "C+", min: 77, max: 79 },
+    { grade: "C", min: 73, max: 76 },
+    { grade: "C-", min: 70, max: 72 },
+    { grade: "D+", min: 67, max: 69 },
+    { grade: "D", min: 63, max: 66 },
+    { grade: "D-", min: 60, max: 62 },
+    { grade: "F", min: 0, max: 59 }
+];
+
+let userGpaBreakdown = { ...defaultGpaBreakdown };
+let userPercentageToLetterGradeRules = [...defaultPercentageToLetterGradeRules];
+
 
 // IMPORTANT: Replace this with YOUR OWN Firebase project configuration
 // You can find this in your Firebase project settings (Project settings -> General -> Your apps -> Firebase SDK snippet -> Config)
@@ -104,6 +135,12 @@ function showPage(pageId) {
             });
             document.getElementById(pageId).classList.add('active');
 
+            // Special handling for settings page to render UI
+            if (pageId === 'settings-page') {
+                renderGPASettingsUI();
+                renderPercentageSettingsUI();
+            }
+
             // Update active state for navigation buttons
             document.querySelectorAll('.nav-item').forEach(btn => {
                 btn.classList.remove('bg-indigo-100', 'dark:bg-indigo-700', 'text-indigo-700', 'dark:text-indigo-100');
@@ -129,13 +166,17 @@ async function initializeFirebase() {
         db = getFirestore(app);
         auth = getAuth(app);
 
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => { // Made async to await settings load
             document.getElementById('loading-firebase').classList.add('hidden'); // Hide loading spinner
 
             if (user) {
                 currentUserId = user.uid;
                 document.getElementById('user-id-display').innerHTML = `User ID: <span class="font-mono break-all">${currentUserId}</span>`;
-                setupFirestoreListeners();
+                
+                // Load user settings
+                await loadUserSettings();
+                setupFirestoreListeners(); // Set up grade listener AFTER settings are loaded
+
                 // If user is logged in, and localStorage indicates they started the app, go to dashboard
                 if (localStorage.getItem('appStarted') === 'true') {
                     showPage('dashboard-page');
@@ -145,6 +186,8 @@ async function initializeFirebase() {
             } else {
                 // User is signed out or no user is logged in
                 currentUserId = null; // Clear userId
+                userGpaBreakdown = { ...defaultGpaBreakdown }; // Reset to defaults
+                userPercentageToLetterGradeRules = [...defaultPercentageToLetterGradeRules]; // Reset to defaults
                 document.getElementById('user-id-display').innerHTML = ''; // Clear display
                 // Always show landing page if no user is logged in
                 showPage('landing-page');
@@ -159,6 +202,51 @@ async function initializeFirebase() {
     }
 }
 
+// --- User Settings Management (New) ---
+async function loadUserSettings() {
+    if (!currentUserId) return;
+
+    const settingsDocRef = doc(db, `users/${currentUserId}/settings`, 'gpa_config');
+    try {
+        const docSnap = await getDoc(settingsDocRef);
+        if (docSnap.exists()) {
+            const settings = docSnap.data();
+            if (settings.gpaBreakdown) {
+                userGpaBreakdown = settings.gpaBreakdown;
+            }
+            if (settings.percentageToLetterGradeRules) {
+                userPercentageToLetterGradeRules = settings.percentageToLetterGradeRules;
+                // Ensure rules are sorted correctly after loading
+                userPercentageToLetterGradeRules.sort((a, b) => b.min - a.min);
+            }
+            console.log("User settings loaded:", userGpaBreakdown, userPercentageToLetterGradeRules);
+        } else {
+            // If no settings exist, create them with defaults
+            await saveUserSettings();
+        }
+    } catch (error) {
+        console.error("Error loading user settings:", error);
+        // Fallback to defaults in case of error
+        userGpaBreakdown = { ...defaultGpaBreakdown };
+        userPercentageToLetterGradeRules = [...defaultPercentageToLetterGradeRules];
+    }
+}
+
+async function saveUserSettings() {
+    if (!currentUserId) return;
+
+    const settingsDocRef = doc(db, `users/${currentUserId}/settings`, 'gpa_config');
+    try {
+        await setDoc(settingsDocRef, {
+            gpaBreakdown: userGpaBreakdown,
+            percentageToLetterGradeRules: userPercentageToLetterGradeRules
+        });
+        console.log("User settings saved.");
+    } catch (error) {
+        console.error("Error saving user settings:", error);
+    }
+}
+
 // --- Authentication Functions ---
 async function handleSignUp(event) {
     event.preventDefault();
@@ -167,8 +255,10 @@ async function handleSignUp(event) {
     const password = document.getElementById('signup-password').value;
 
     try {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         // User is automatically signed in after creation
+        currentUserId = userCredential.user.uid; // Ensure currentUserId is set for new users
+        await saveUserSettings(); // Initialize settings for new user
         localStorage.setItem('appStarted', 'true');
         showPage('dashboard-page'); // Redirect to dashboard on successful sign-up
     } catch (error) {
@@ -195,8 +285,8 @@ async function handleLogin(event) {
 
     try {
         await signInWithEmailAndPassword(auth, email, password);
+        // onAuthStateChanged will handle page redirection and settings loading
         localStorage.setItem('appStarted', 'true');
-        showPage('dashboard-page'); // Redirect to dashboard on successful login
     } catch (error) {
         let errorMessage = "Failed to log in.";
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
@@ -218,7 +308,9 @@ async function handleGoogleSignIn(event) {
 
     const provider = new GoogleAuthProvider();
     try {
-        await signInWithPopup(auth, provider);
+        const userCredential = await signInWithPopup(auth, provider);
+        currentUserId = userCredential.user.uid; // Ensure currentUserId is set
+        await loadUserSettings(); // Load or initialize settings for Google users
         localStorage.setItem('appStarted', 'true');
         showPage('dashboard-page');
     } catch (error) {
@@ -295,19 +387,32 @@ function setupFirestoreListeners() {
 function calculateOverallGPA() {
     if (gradesData.length === 0) return "N/A";
 
-    let totalWeightedScore = 0;
+    let totalWeightedGradePoints = 0;
     let totalWeight = 0;
 
     gradesData.forEach(grade => {
-        const score = parseFloat(grade.score) || 0;
-        const weight = parseFloat(grade.weight) || 0; // Ensure weight is a number
+        const letterGrade = grade.letterGrade;
+        const weight = parseFloat(grade.weight) || 0;
+        const isAP = grade.isAP || false;
 
-        totalWeightedScore += (score * weight);
+        let gradePoints = userGpaBreakdown[letterGrade];
+
+        if (gradePoints === undefined) {
+            console.warn(`GPA points not found for letter grade: ${letterGrade}. Using 0.`);
+            gradePoints = 0;
+        }
+
+        // Apply AP weighting if applicable
+        if (isAP) {
+            gradePoints = Math.min(gradePoints + 1.0, 5.0); // Add 1.0 for AP, cap at 5.0
+        }
+
+        totalWeightedGradePoints += (gradePoints * weight);
         totalWeight += weight;
     });
 
-    if (totalWeight === 0) return "N/A"; // Avoid division by zero if no weighted grades
-    return (totalWeightedScore / totalWeight).toFixed(2);
+    if (totalWeight === 0) return "N/A";
+    return (totalWeightedGradePoints / totalWeight).toFixed(2);
 }
 
 function renderDashboard() {
@@ -335,7 +440,13 @@ function renderDashboard() {
                             Score
                         </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Letter
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                             Weight
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            AP
                         </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider rounded-tr-lg">
                             Date
@@ -348,7 +459,9 @@ function renderDashboard() {
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">${grade.course}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${grade.assignment}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${grade.score}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${grade.letterGrade || 'N/A'}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${grade.weight || 'N/A'}%</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${grade.isAP ? 'Yes' : 'No'}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${new Date(grade.date).toLocaleDateString()}</td>
                         </tr>
                     `).join('')}
@@ -423,7 +536,61 @@ async function generateSchedule() {
     }
 }
 
+// Function to send current date to the Python API (from previous request)
+async function sendCurrentDateToAI() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+    const day = String(today.getDate()).padStart(2, '0');
+    const currentDateString = `${year}-${month}-${day}`;
+
+    const messageDiv = document.getElementById('send-date-message');
+    messageDiv.textContent = 'Sending date...';
+    messageDiv.className = 'mt-2 text-sm text-gray-600 dark:text-gray-300';
+
+    try {
+        // IMPORTANT: Replace with the actual URL of your deployed Flask API
+        // For local testing: 'http://127.0.0.1:5000/set_summary_date'
+        // For deployment: 'https://your-api-domain.com/set_summary_date'
+        const apiUrl = 'http://127.0.0.1:5000/set_summary_date'; // Change this for deployment
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ date: currentDateString })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            messageDiv.textContent = `Date sent successfully: ${result.date}`;
+            messageDiv.className = 'mt-2 text-sm text-green-600 dark:text-green-400';
+        } else {
+            messageDiv.textContent = `Error sending date: ${result.error || 'Unknown error'}`;
+            messageDiv.className = 'mt-2 text-sm text-red-600 dark:text-red-400';
+            console.error("API Error:", result);
+        }
+    } catch (error) {
+        messageDiv.textContent = `Network error: Could not reach API.`;
+        messageDiv.className = 'mt-2 text-sm text-red-600 dark:text-red-400';
+        console.error("Fetch error:", error);
+    }
+}
+
+
 // --- Grade Tracker Logic ---
+// Helper to get letter grade from score based on user's rules
+function getLetterGradeFromScore(score) {
+    for (const rule of userPercentageToLetterGradeRules) {
+        if (score >= rule.min && score <= rule.max) {
+            return rule.grade;
+        }
+    }
+    return "F"; // Default to F if no rule matches
+}
+
 function renderGrades() {
     const gradesTableBody = document.getElementById('grades-table-body');
     const noGradesRecorded = document.getElementById('no-grades-recorded');
@@ -445,13 +612,15 @@ function renderGrades() {
 
         gradesData.forEach(grade => {
             const row = gradesTableBody.insertRow();
-            // Ensure weight is displayed, default to 1 if not present (for older entries)
             const displayWeight = grade.weight !== undefined ? `${grade.weight}%` : 'N/A';
+            const displayAP = grade.isAP ? 'Yes' : 'No';
             row.innerHTML = `
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">${grade.course}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${grade.assignment}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${grade.score}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${grade.letterGrade || 'N/A'}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${displayWeight}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${displayAP}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${new Date(grade.date).toLocaleDateString()}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button data-id="${grade.id}" class="delete-grade-btn text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200 transition-colors duration-200" title="Delete Grade">
@@ -462,30 +631,43 @@ function renderGrades() {
         });
 
         // Render course averages
-        const uniqueCourses = [...new Set(gradesData.map(g => g.course))];
-        uniqueCourses.forEach(course => {
-            const courseGrades = gradesData.filter(g => g.course.toLowerCase() === course.toLowerCase());
+        const courseAverages = {};
+        gradesData.forEach(grade => {
+            const courseName = grade.course;
+            if (!courseAverages[courseName]) {
+                courseAverages[courseName] = { totalWeightedGradePoints: 0, totalWeight: 0 };
+            }
 
-            let totalWeightedScore = 0;
-            let totalWeight = 0;
+            const letterGrade = grade.letterGrade;
+            const weight = parseFloat(grade.weight) || 0;
+            const isAP = grade.isAP || false;
 
-            courseGrades.forEach(grade => {
-                const score = parseFloat(grade.score) || 0;
-                const weight = parseFloat(grade.weight) || 0;
-                totalWeightedScore += (score * weight);
-                totalWeight += weight;
-            });
+            let gradePoints = userGpaBreakdown[letterGrade];
+            if (gradePoints === undefined) {
+                console.warn(`GPA points not found for letter grade: ${letterGrade} in course ${courseName}. Using 0.`);
+                gradePoints = 0;
+            }
 
-            const average = (totalWeight === 0) ? "N/A" : (totalWeightedScore / totalWeight).toFixed(2);
+            if (isAP) {
+                gradePoints = Math.min(gradePoints + 1.0, 5.0); // Add 1.0 for AP, cap at 5.0
+            }
+
+            courseAverages[courseName].totalWeightedGradePoints += (gradePoints * weight);
+            courseAverages[courseName].totalWeight += weight;
+        });
+
+        for (const courseName in courseAverages) {
+            const avgData = courseAverages[courseName];
+            const average = (avgData.totalWeight === 0) ? "N/A" : (avgData.totalWeightedGradePoints / avgData.totalWeight).toFixed(2);
 
             const li = document.createElement('li');
             li.className = "flex justify-between items-center text-gray-700 dark:text-gray-300";
             li.innerHTML = `
-                <span class="font-medium">${course}:</span>
+                <span class="font-medium">${courseName}:</span>
                 <span class="font-bold text-indigo-600 dark:text-indigo-400">${average}</span>
             `;
             courseAveragesList.appendChild(li);
-        });
+        }
     }
 }
 
@@ -499,11 +681,13 @@ async function addGrade(event) {
     const course = document.getElementById('grade-course').value.trim();
     const assignment = document.getElementById('grade-assignment').value.trim();
     const score = document.getElementById('grade-score').value.trim();
+    const letterGrade = document.getElementById('grade-letter-grade').value.trim(); // New: Get letter grade
     const weight = document.getElementById('grade-weight').value.trim();
     const date = document.getElementById('grade-date').value.trim();
+    const isAP = document.getElementById('grade-is-ap').checked; // New: Get AP status
 
-    if (!course || !assignment || !score || !weight || !date) {
-        showMessage("Please fill in all fields.", "error");
+    if (!course || !assignment || !score || !letterGrade || !weight || !date) {
+        showMessage("Please fill in all required fields (Course, Assignment, Score, Letter Grade, Weight, Date).", "error");
         return;
     }
     if (isNaN(parseFloat(score)) || parseFloat(score) < 0 || parseFloat(score) > 100) {
@@ -515,6 +699,14 @@ async function addGrade(event) {
         return;
     }
 
+    // Optional: Validate if entered letter grade matches calculated one (for consistency)
+    const calculatedLetterGrade = getLetterGradeFromScore(parseFloat(score));
+    if (calculatedLetterGrade !== letterGrade) {
+        // You can choose to warn the user, or auto-correct, or allow override.
+        // For now, we'll just log a warning.
+        console.warn(`Entered letter grade (${letterGrade}) does not match calculated letter grade (${calculatedLetterGrade}) for score ${score}.`);
+        // showMessage(`Warning: Entered letter grade (${letterGrade}) doesn't match calculated (${calculatedLetterGrade}). Please ensure consistency or update your percentage rules.`, "warning");
+    }
 
     try {
         const gradesCollectionRef = collection(db, `users/${currentUserId}/grades`);
@@ -522,14 +714,18 @@ async function addGrade(event) {
             course: course,
             assignment: assignment,
             score: parseFloat(score),
+            letterGrade: letterGrade, // Store letter grade
             weight: parseFloat(weight),
             date: date,
+            isAP: isAP, // Store AP status
             timestamp: new Date().toISOString()
         });
         showMessage("Grade added successfully!", "success");
         document.getElementById('add-grade-form').reset();
         document.getElementById('grade-date').value = new Date().toISOString().split('T')[0];
         document.getElementById('grade-weight').value = "1";
+        document.getElementById('grade-is-ap').checked = false; // Reset AP checkbox
+        document.getElementById('grade-letter-grade').value = ""; // Reset dropdown
     } catch (error) {
         console.error("Error adding grade:", error);
         showMessage("Failed to add grade.", "error");
@@ -551,6 +747,152 @@ async function deleteGrade(gradeId) {
     }
 }
 
+// --- Settings Page Logic (New) ---
+
+// Render GPA Scale Configuration UI
+function renderGPASettingsUI() {
+    const tableBody = document.getElementById('gpa-scale-table-body');
+    tableBody.innerHTML = ''; // Clear existing rows
+
+    // Sort grades alphabetically for consistent display, A+ first
+    const sortedGrades = Object.keys(userGpaBreakdown).sort((a, b) => {
+        const order = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F"];
+        return order.indexOf(a) - order.indexOf(b);
+    });
+
+    sortedGrades.forEach(grade => {
+        const row = tableBody.insertRow();
+        row.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">${grade}</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    class="gpa-input w-24 p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500"
+                    data-grade="${grade}"
+                    value="${userGpaBreakdown[grade]}"
+                />
+            </td>
+        `;
+    });
+}
+
+// Save GPA Scale Configuration
+async function saveGPASettings() {
+    const newGpaBreakdown = {};
+    const inputs = document.querySelectorAll('#gpa-scale-table-body .gpa-input');
+    let isValid = true;
+    inputs.forEach(input => {
+        const grade = input.dataset.grade;
+        const value = parseFloat(input.value);
+        if (isNaN(value) || value < 0) {
+            isValid = false;
+            input.classList.add('border-red-500'); // Highlight error
+        } else {
+            newGpaBreakdown[grade] = value;
+            input.classList.remove('border-red-500');
+        }
+    });
+
+    if (!isValid) {
+        document.getElementById('gpa-settings-message').textContent = "Please enter valid numbers for all grade points.";
+        document.getElementById('gpa-settings-message').className = 'mt-2 text-sm text-red-600 dark:text-red-400';
+        document.getElementById('gpa-settings-message').classList.remove('hidden');
+        return;
+    }
+
+    userGpaBreakdown = newGpaBreakdown;
+    await saveUserSettings();
+    document.getElementById('gpa-settings-message').textContent = "GPA settings saved successfully!";
+    document.getElementById('gpa-settings-message').className = 'mt-2 text-sm text-green-600 dark:text-green-400';
+    document.getElementById('gpa-settings-message').classList.remove('hidden');
+    // Re-render dashboard/grades to reflect new GPA immediately
+    renderGrades();
+    renderDashboard();
+}
+
+// Render Percentage to Letter Grade Rules UI
+function renderPercentageSettingsUI() {
+    const tableBody = document.getElementById('percentage-rules-table-body');
+    tableBody.innerHTML = ''; // Clear existing rows
+
+    // Ensure rules are sorted by min percentage descending for display
+    userPercentageToLetterGradeRules.sort((a, b) => b.min - a.min);
+
+    userPercentageToLetterGradeRules.forEach((rule, index) => {
+        const row = tableBody.insertRow();
+        row.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">${rule.grade}</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    max="100"
+                    class="percentage-min-input w-24 p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500"
+                    data-index="${index}"
+                    value="${rule.min}"
+                />
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    max="100"
+                    class="percentage-max-input w-24 p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500"
+                    data-index="${index}"
+                    value="${rule.max}"
+                />
+            </td>
+        `;
+    });
+}
+
+// Save Percentage to Letter Grade Rules
+async function savePercentageSettings() {
+    const newPercentageRules = [];
+    const minInputs = document.querySelectorAll('#percentage-rules-table-body .percentage-min-input');
+    const maxInputs = document.querySelectorAll('#percentage-rules-table-body .percentage-max-input');
+    const gradeCells = document.querySelectorAll('#percentage-rules-table-body td:first-child');
+
+    let isValid = true;
+    for (let i = 0; i < minInputs.length; i++) {
+        const grade = gradeCells[i].textContent;
+        const minVal = parseFloat(minInputs[i].value);
+        const maxVal = parseFloat(maxInputs[i].value);
+
+        if (isNaN(minVal) || isNaN(maxVal) || minVal < 0 || maxVal > 100 || minVal > maxVal) {
+            isValid = false;
+            minInputs[i].classList.add('border-red-500');
+            maxInputs[i].classList.add('border-red-500');
+        } else {
+            newPercentageRules.push({ grade: grade, min: minVal, max: maxVal });
+            minInputs[i].classList.remove('border-red-500');
+            maxInputs[i].classList.remove('border-red-500');
+        }
+    }
+
+    if (!isValid) {
+        document.getElementById('percentage-settings-message').textContent = "Please enter valid percentage ranges (0-100, min <= max).";
+        document.getElementById('percentage-settings-message').className = 'mt-2 text-sm text-red-600 dark:text-red-400';
+        document.getElementById('percentage-settings-message').classList.remove('hidden');
+        return;
+    }
+
+    // Sort the rules by min percentage descending before saving for consistent lookup
+    newPercentageRules.sort((a, b) => b.min - a.min);
+    userPercentageToLetterGradeRules = newPercentageRules;
+    await saveUserSettings();
+    document.getElementById('percentage-settings-message').textContent = "Percentage rules saved successfully!";
+    document.getElementById('percentage-settings-message').className = 'mt-2 text-sm text-green-600 dark:text-green-400';
+    document.getElementById('percentage-settings-message').classList.remove('hidden');
+    // Re-render the settings UI to show the sorted order
+    renderPercentageSettingsUI();
+}
+
+
 // --- Event Listeners ---
 document.addEventListener('DOMContentLoaded', () => {
     initializeFirebase();
@@ -560,12 +902,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Landing page button listeners
     document.getElementById('landing-get-started-btn').addEventListener('click', () => {
-        // If already logged in, go to dashboard. Otherwise, prompt login/signup.
         if (auth.currentUser) {
             localStorage.setItem('appStarted', 'true');
             showPage('dashboard-page');
         } else {
-            showPage('login-modal'); // Or signup-modal, depending on preference
+            showPage('login-modal');
         }
     });
     document.getElementById('landing-see-features-btn').addEventListener('click', () => {
@@ -587,13 +928,13 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         toggleModal('login-modal', false);
         toggleModal('signup-modal', true);
-        hideAuthError('login-error-message'); // Clear errors when switching
+        hideAuthError('login-error-message');
     });
     document.getElementById('switch-to-login').addEventListener('click', (e) => {
         e.preventDefault();
         toggleModal('signup-modal', false);
         toggleModal('login-modal', true);
-        hideAuthError('signup-error-message'); // Clear errors when switching
+        hideAuthError('signup-error-message');
     });
 
     // Authentication form submissions
@@ -602,7 +943,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('login-google-btn').addEventListener('click', handleGoogleSignIn);
     document.getElementById('signup-google-btn').addEventListener('click', handleGoogleSignIn);
 
-    // NEW: Forgot Password link listener
+    // Forgot Password link listener
     document.getElementById('forgot-password-link').addEventListener('click', handleForgotPassword);
 
 
@@ -612,6 +953,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('nav-grade-tracker').addEventListener('click', () => showPage('grade-tracker-page'));
     document.getElementById('nav-extracurriculars').addEventListener('click', () => showPage('extracurriculars-page'));
     document.getElementById('nav-calendar-sync').addEventListener('click', () => showPage('calendar-sync-page'));
+    document.getElementById('nav-settings').addEventListener('click', () => showPage('settings-page')); // NEW: Settings nav item
 
     // "Student Planner" title in sidebar listener
     document.getElementById('sidebar-app-title').addEventListener('click', () => {
@@ -637,9 +979,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Time Management button listener
     document.getElementById('generate-schedule-btn').addEventListener('click', generateSchedule);
+    // Send Current Date to AI button listener (from previous request)
+    document.getElementById('send-date-to-ai-btn').addEventListener('click', sendCurrentDateToAI);
+
 
     // Grade Tracker form submission
     document.getElementById('add-grade-form').addEventListener('submit', addGrade);
+
+    // Event listener for score input to auto-populate letter grade
+    document.getElementById('grade-score').addEventListener('input', (event) => {
+        const score = parseFloat(event.target.value);
+        if (!isNaN(score)) {
+            document.getElementById('grade-letter-grade').value = getLetterGradeFromScore(score);
+        } else {
+            document.getElementById('grade-letter-grade').value = '';
+        }
+    });
+
 
     // Event delegation for delete buttons in grades table
     document.getElementById('grades-table-body').addEventListener('click', (event) => {
@@ -649,6 +1005,11 @@ document.addEventListener('DOMContentLoaded', () => {
             deleteGrade(gradeId);
         }
     });
+
+    // Settings page save buttons
+    document.getElementById('save-gpa-settings-btn').addEventListener('click', saveGPASettings);
+    document.getElementById('save-percentage-settings-btn').addEventListener('click', savePercentageSettings);
+
 
     // Placeholder for AI Time Summary button
     document.getElementById('generate-summary-btn').addEventListener('click', () => {
