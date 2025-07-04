@@ -48,6 +48,8 @@ const defaultPercentageToLetterGradeRules = [
 
 let userGpaBreakdown = { ...defaultGpaBreakdown };
 let userPercentageToLetterGradeRules = [...defaultPercentageToLetterGradeRules];
+// New setting for AP weighting mode: 'standard' (4.0 scale) or 'weighted' (5.0 scale)
+let userAPWeightingMode = 'weighted'; // Default to weighted as per previous implementation
 
 
 // IMPORTANT: Replace this with YOUR OWN Firebase project configuration
@@ -139,6 +141,7 @@ function showPage(pageId) {
             if (pageId === 'settings-page') {
                 renderGPASettingsUI();
                 renderPercentageSettingsUI();
+                renderAPWeightingSettingsUI(); // NEW: Render AP weighting settings
             }
 
             // Update active state for navigation buttons
@@ -188,6 +191,7 @@ async function initializeFirebase() {
                 currentUserId = null; // Clear userId
                 userGpaBreakdown = { ...defaultGpaBreakdown }; // Reset to defaults
                 userPercentageToLetterGradeRules = [...defaultPercentageToLetterGradeRules]; // Reset to defaults
+                userAPWeightingMode = 'weighted'; // Reset AP weighting to default
                 document.getElementById('user-id-display').innerHTML = ''; // Clear display
                 // Always show landing page if no user is logged in
                 showPage('landing-page');
@@ -219,7 +223,10 @@ async function loadUserSettings() {
                 // Ensure rules are sorted correctly after loading
                 userPercentageToLetterGradeRules.sort((a, b) => b.min - a.min);
             }
-            console.log("User settings loaded:", userGpaBreakdown, userPercentageToLetterGradeRules);
+            if (settings.apWeightingMode) { // Load new AP weighting mode
+                userAPWeightingMode = settings.apWeightingMode;
+            }
+            console.log("User settings loaded:", userGpaBreakdown, userPercentageToLetterGradeRules, userAPWeightingMode);
         } else {
             // If no settings exist, create them with defaults
             await saveUserSettings();
@@ -229,6 +236,7 @@ async function loadUserSettings() {
         // Fallback to defaults in case of error
         userGpaBreakdown = { ...defaultGpaBreakdown };
         userPercentageToLetterGradeRules = [...defaultPercentageToLetterGradeRules];
+        userAPWeightingMode = 'weighted';
     }
 }
 
@@ -239,7 +247,8 @@ async function saveUserSettings() {
     try {
         await setDoc(settingsDocRef, {
             gpaBreakdown: userGpaBreakdown,
-            percentageToLetterGradeRules: userPercentageToLetterGradeRules
+            percentageToLetterGradeRules: userPercentageToLetterGradeRules,
+            apWeightingMode: userAPWeightingMode // Save new AP weighting mode
         });
         console.log("User settings saved.");
     } catch (error) {
@@ -402,8 +411,8 @@ function calculateOverallGPA() {
             gradePoints = 0;
         }
 
-        // Apply AP weighting if applicable
-        if (isAP) {
+        // Apply AP weighting based on user setting
+        if (isAP && userAPWeightingMode === 'weighted') {
             gradePoints = Math.min(gradePoints + 1.0, 5.0); // Add 1.0 for AP, cap at 5.0
         }
 
@@ -648,7 +657,8 @@ function renderGrades() {
                 gradePoints = 0;
             }
 
-            if (isAP) {
+            // Apply AP weighting based on user setting
+            if (isAP && userAPWeightingMode === 'weighted') {
                 gradePoints = Math.min(gradePoints + 1.0, 5.0); // Add 1.0 for AP, cap at 5.0
             }
 
@@ -812,6 +822,45 @@ async function saveGPASettings() {
     renderDashboard();
 }
 
+// Render AP Weighting Settings UI
+function renderAPWeightingSettingsUI() {
+    const standardRadio = document.getElementById('ap-weighting-standard');
+    const weightedRadio = document.getElementById('ap-weighting-weighted');
+
+    if (userAPWeightingMode === 'standard') {
+        standardRadio.checked = true;
+    } else {
+        weightedRadio.checked = true;
+    }
+}
+
+// Save AP Weighting Settings
+async function saveAPWeightingSettings() {
+    const standardRadio = document.getElementById('ap-weighting-standard');
+    const weightedRadio = document.getElementById('ap-weighting-weighted');
+    const messageDiv = document.getElementById('ap-weighting-message');
+
+    if (standardRadio.checked) {
+        userAPWeightingMode = 'standard';
+    } else if (weightedRadio.checked) {
+        userAPWeightingMode = 'weighted';
+    } else {
+        messageDiv.textContent = "Please select an AP weighting option.";
+        messageDiv.className = 'mt-2 text-sm text-red-600 dark:text-red-400';
+        messageDiv.classList.remove('hidden');
+        return;
+    }
+
+    await saveUserSettings();
+    messageDiv.textContent = "AP weighting settings saved successfully!";
+    messageDiv.className = 'mt-2 text-sm text-green-600 dark:text-green-400';
+    messageDiv.classList.remove('hidden');
+    // Re-render dashboard/grades to reflect new GPA immediately
+    renderGrades();
+    renderDashboard();
+}
+
+
 // Render Percentage to Letter Grade Rules UI
 function renderPercentageSettingsUI() {
     const tableBody = document.getElementById('percentage-rules-table-body');
@@ -953,7 +1002,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('nav-grade-tracker').addEventListener('click', () => showPage('grade-tracker-page'));
     document.getElementById('nav-extracurriculars').addEventListener('click', () => showPage('extracurriculars-page'));
     document.getElementById('nav-calendar-sync').addEventListener('click', () => showPage('calendar-sync-page'));
-    document.getElementById('nav-settings').addEventListener('click', () => showPage('settings-page')); // NEW: Settings nav item
+    document.getElementById('nav-settings').addEventListener('click', () => showPage('settings-page'));
 
     // "Student Planner" title in sidebar listener
     document.getElementById('sidebar-app-title').addEventListener('click', () => {
@@ -979,7 +1028,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Time Management button listener
     document.getElementById('generate-schedule-btn').addEventListener('click', generateSchedule);
-    // Send Current Date to AI button listener (from previous request)
     document.getElementById('send-date-to-ai-btn').addEventListener('click', sendCurrentDateToAI);
 
 
@@ -1009,6 +1057,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Settings page save buttons
     document.getElementById('save-gpa-settings-btn').addEventListener('click', saveGPASettings);
     document.getElementById('save-percentage-settings-btn').addEventListener('click', savePercentageSettings);
+    document.getElementById('save-ap-weighting-btn').addEventListener('click', saveAPWeightingSettings); // NEW: AP Weighting save button
 
 
     // Placeholder for AI Time Summary button
