@@ -370,7 +370,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         aiChatInput.value = ''; // Clear input
 
         try {
-            const response = await fetch('https://student-planner-backend.onrender.com/', {
+            const response = await fetch('https://student-planner-backend.onrender.com/generate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
