@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Planner</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-inter antialiased flex flex-col md:flex-row">
+
+    <!-- Loading Spinner for Firebase Init -->
+    <div id="loading-firebase" class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 absolute inset-0 z-50">
+        <div class="flex items-center space-x-2 text-gray-700 dark:text-gray-300">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            <span>Loading application...</span>
+        </div>
+    </div>
+
+    <!-- Landing Page -->
+    <div id="landing-page" class="page-content active w-full min-h-screen flex flex-col items-center bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 relative overflow-hidden">
+        <!-- Background Circle -->
+        <div class="landing-hero-bg-circle"></div>
+        <!-- ...rest of your landing page HTML... -->
+    </div>
+
+    <!-- Main App Content Container (hidden by default) -->
+    <div id="main-app-container" class="flex-1 flex flex-col md:flex-row hidden">
+        <!-- Sidebar Navigation -->
+        <aside class="w-full md:w-64 bg-white dark:bg-gray-800 shadow-lg md:shadow-none p-4 flex flex-row md:flex-col justify-around md:justify-start items-center md:items-stretch border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700">
+            <!-- ...sidebar HTML... -->
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 p-6 md:p-8 overflow-auto">
+            <!-- ...all your page-content divs... -->
+        </main>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
