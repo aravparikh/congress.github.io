@@ -7,7 +7,8 @@ import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     GoogleAuthProvider,
-    signInWithPopup
+    signInWithPopup,
+    sendPasswordResetEmail // Added for password reset
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, doc, addDoc, onSnapshot, query, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -41,7 +42,7 @@ function showMessage(message, type) {
     }, 5000); // Hide after 5 seconds
 }
 
-// Function to show custom modal (general purpose, e.g., for feature coming soon)
+// Function to show custom modal (general purpose, e.g., for feature coming soon or password reset feedback)
 function showCustomModal(title, message) {
     const modal = document.createElement('div');
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
@@ -233,6 +234,37 @@ async function handleGoogleSignIn(event) {
         console.error("Google sign-in error:", error);
     }
 }
+
+async function handleForgotPassword() {
+    hideAuthError('login-error-message'); // Clear any existing login errors
+    const email = document.getElementById('login-email').value;
+
+    if (!email) {
+        showAuthError('login-error-message', "Please enter your email address to reset your password.");
+        return;
+    }
+
+    try {
+        await sendPasswordResetEmail(auth, email);
+        showCustomModal("Password Reset", `If an account exists for ${email}, a password reset link has been sent to that email address. Please check your inbox.`);
+        toggleModal('login-modal', false); // Close login modal after sending
+    } catch (error) {
+        let errorMessage = "Failed to send password reset email.";
+        if (error.code === 'auth/user-not-found') {
+            // For security reasons, Firebase often returns 'user-not-found' even if email is valid
+            // to avoid revealing which emails are registered. We'll give a generic success message.
+            showCustomModal("Password Reset", `If an account exists for ${email}, a password reset link has been sent to that email address. Please check your inbox.`);
+            toggleModal('login-modal', false); // Close login modal
+        } else if (error.code === 'auth/invalid-email') {
+            errorMessage = "Invalid email address format.";
+        } else if (error.code === 'auth/operation-not-allowed') {
+            errorMessage = "Email/Password sign-in is not enabled in Firebase. Please enable it in your Firebase project settings.";
+        }
+        showAuthError('login-error-message', errorMessage);
+        console.error("Password reset error:", error);
+    }
+}
+
 
 // --- Firestore Listeners ---
 function setupFirestoreListeners() {
@@ -569,6 +601,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('signup-form').addEventListener('submit', handleSignUp);
     document.getElementById('login-google-btn').addEventListener('click', handleGoogleSignIn);
     document.getElementById('signup-google-btn').addEventListener('click', handleGoogleSignIn);
+
+    // NEW: Forgot Password link listener
+    document.getElementById('forgot-password-link').addEventListener('click', handleForgotPassword);
 
 
     // Navigation button event listeners (for main app)
