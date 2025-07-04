@@ -3,9 +3,8 @@
 // Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-// Firestore imports are commented out as they are not directly used in this AI chat example,
-// but included for completeness if you expand the app.
-// import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+// Firestore imports are uncommented and included for grade tracking functionality.
+import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Global Firebase variables (provided by the Canvas environment)
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -14,13 +13,14 @@ const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial
 
 let app;
 let auth;
-let db; // Placeholder for Firestore, not used in this specific AI chat functionality
+let db; // Initialized for Firestore
 
 document.addEventListener('DOMContentLoaded', async () => {
     const loadingFirebase = document.getElementById('loading-firebase');
     const landingPage = document.getElementById('landing-page');
     const mainAppLayout = document.getElementById('main-app-layout');
     const userIdDisplay = document.getElementById('user-id-display');
+    const overallGpaDisplay = document.getElementById('overall-gpa-display'); // New element for GPA display
 
     // Modals and their buttons
     const loginModal = document.getElementById('login-modal');
@@ -48,6 +48,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     const aiChatLoadingSpinner = document.getElementById('ai-chat-loading-spinner');
     const aiChatError = document.getElementById('ai-chat-error');
 
+    // Grade Tracker elements
+    const addGradeForm = document.getElementById('add-grade-form');
+    const courseNameInput = document.getElementById('course-name');
+    const assignmentNameInput = document.getElementById('assignment-name');
+    const percentageGradeInput = document.getElementById('percentage-grade');
+    const creditHoursInput = document.getElementById('credit-hours');
+    const gradesListLoading = document.getElementById('grades-list-loading');
+    const gradesTableContainer = document.getElementById('grades-table-container');
+    const gradesTableBody = document.getElementById('grades-table-body');
+    const noGradesRecorded = document.getElementById('no-grades-recorded');
+    const courseAveragesSummary = document.getElementById('course-averages-summary'); // This will now display overall GPA
+
     // Function to display a specific page
     const displayPage = (pageId) => {
         document.querySelectorAll('.page-content').forEach(page => {
@@ -71,12 +83,181 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         app = initializeApp(firebaseConfig);
         auth = getAuth(app);
-        // db = getFirestore(app); // Initialize Firestore if needed for other features
+        db = getFirestore(app); // Initialize Firestore
     } catch (error) {
         console.error("Firebase initialization error:", error);
         loadingFirebase.innerHTML = `<div class="text-red-600 dark:text-red-400">Error initializing Firebase. Please check your configuration.</div>`;
         return;
     }
+
+    // Define grade point mapping for GPA calculation
+    const GRADE_POINT_MAP = {
+        'A': 4.0,
+        'B': 3.0,
+        'C': 2.0,
+        'D': 1.0,
+        'F': 0.0
+    };
+
+    // Function to convert percentage to letter grade and then to grade point
+    const percentageToGradePoint = (percentage) => {
+        if (percentage >= 90) return GRADE_POINT_MAP['A'];
+        if (percentage >= 80) return GRADE_POINT_MAP['B'];
+        if (percentage >= 70) return GRADE_POINT_MAP['C'];
+        if (percentage >= 60) return GRADE_POINT_MAP['D'];
+        return GRADE_POINT_MAP['F'];
+    };
+
+    // Function to render grades and calculate GPA
+    const renderGrades = async () => {
+        gradesListLoading.classList.remove('hidden');
+        gradesTableContainer.classList.add('hidden');
+        noGradesRecorded.classList.add('hidden');
+        courseAveragesSummary.classList.add('hidden');
+
+        if (!auth.currentUser) {
+            console.log("No user logged in, cannot fetch grades.");
+            gradesListLoading.classList.add('hidden');
+            noGradesRecorded.classList.remove('hidden');
+            overallGpaDisplay.textContent = '--';
+            return;
+        }
+
+        const userId = auth.currentUser.uid;
+        const gradesRef = collection(db, `users/${userId}/grades`); // Assuming a 'grades' subcollection for each user
+
+        try {
+            const q = query(gradesRef); // You might add ordering or filtering here if needed
+            const querySnapshot = await getDocs(q);
+
+            let totalGradePoints = 0;
+            let totalCreditHours = 0;
+            const grades = [];
+
+            if (querySnapshot.empty) {
+                gradesListLoading.classList.add('hidden');
+                noGradesRecorded.classList.remove('hidden');
+                overallGpaDisplay.textContent = '0.00'; // No grades, so GPA is 0.00
+                return;
+            }
+
+            querySnapshot.forEach((doc) => {
+                const gradeData = doc.data();
+                const percentage = parseFloat(gradeData.percentage);
+                const creditHours = parseFloat(gradeData.creditHours);
+
+                if (!isNaN(percentage) && !isNaN(creditHours)) {
+                    const gradePoint = percentageToGradePoint(percentage);
+                    totalGradePoints += gradePoint * creditHours;
+                    totalCreditHours += creditHours;
+                    grades.push({ id: doc.id, ...gradeData, gradePoint }); // Store grade point for display
+                }
+            });
+
+            // Calculate Overall GPA
+            const overallGPA = totalCreditHours > 0 ? (totalGradePoints / totalCreditHours).toFixed(2) : '0.00';
+            overallGpaDisplay.textContent = overallGPA;
+
+            // Render grades in the table
+            gradesTableBody.innerHTML = ''; // Clear existing grades
+            grades.forEach(grade => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50 dark:hover:bg-gray-700';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">${grade.courseName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${grade.assignmentName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${grade.percentage}%</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${grade.gradePoint.toFixed(1)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${grade.creditHours}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button data-id="${grade.id}" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200 delete-grade-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                        </button>
+                    </td>
+                `;
+                gradesTableBody.appendChild(row);
+            });
+
+            // Show grade table and averages summary
+            gradesTableContainer.classList.remove('hidden');
+            courseAveragesSummary.classList.remove('hidden');
+            // You might want to populate courseAveragesList here with individual course GPA/averages
+            // For example:
+            // const courseAveragesList = document.getElementById('course-averages-list');
+            // courseAveragesList.innerHTML = '<p class="text-gray-700 dark:text-gray-300">Individual course averages will be implemented here.</p>';
+
+        } catch (error) {
+            console.error("Error fetching grades:", error);
+            gradesListLoading.classList.add('hidden');
+            noGradesRecorded.classList.remove('hidden');
+            overallGpaDisplay.textContent = '--'; // Display error or default
+        } finally {
+            gradesListLoading.classList.add('hidden');
+        }
+    };
+
+
+    // Add Grade Form Submission
+    addGradeForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!auth.currentUser) {
+            alert("Please log in to add grades.");
+            return;
+        }
+
+        const courseName = courseNameInput.value.trim();
+        const assignmentName = assignmentNameInput.value.trim();
+        const percentageGrade = parseFloat(percentageGradeInput.value);
+        const creditHours = parseFloat(creditHoursInput.value);
+
+        if (courseName === '' || assignmentName === '' || isNaN(percentageGrade) || isNaN(creditHours)) {
+            alert('Please fill in all grade details correctly.');
+            return;
+        }
+
+        const userId = auth.currentUser.uid;
+        try {
+            await addDoc(collection(db, `users/${userId}/grades`), {
+                courseName,
+                assignmentName,
+                percentage: percentageGrade,
+                creditHours,
+                timestamp: new Date()
+            });
+            alert('Grade added successfully!');
+            addGradeForm.reset();
+            renderGrades(); // Re-render grades after adding new one
+        } catch (error) {
+            console.error("Error adding grade:", error);
+            alert('Failed to add grade. Please try again.');
+        }
+    });
+
+    // Delete Grade
+    // Event delegation for delete buttons
+    gradesTableBody.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('delete-grade-btn') || e.target.closest('.delete-grade-btn')) {
+            const button = e.target.closest('.delete-grade-btn');
+            const gradeId = button.dataset.id;
+
+            if (confirm('Are you sure you want to delete this grade?')) {
+                if (!auth.currentUser) {
+                    alert("Please log in to delete grades.");
+                    return;
+                }
+                const userId = auth.currentUser.uid;
+                try {
+                    await deleteDoc(doc(db, `users/${userId}/grades`, gradeId));
+                    alert('Grade deleted successfully!');
+                    renderGrades(); // Re-render grades after deletion
+                } catch (error) {
+                    console.error("Error deleting grade:", error);
+                    alert('Failed to delete grade. Please try again.');
+                }
+            }
+        }
+    });
+
 
     // Firebase Auth State Listener
     onAuthStateChanged(auth, async (user) => {
@@ -88,12 +269,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             const userId = user.uid || crypto.randomUUID(); // Fallback for anonymous
             userIdDisplay.textContent = `User ID: ${userId}`;
             displayPage('dashboard-page'); // Show dashboard by default after login
+            renderGrades(); // Render grades on login/page load
         } else {
             // User is signed out
             landingPage.classList.remove('hidden');
             mainAppLayout.classList.add('hidden');
             loginModal.classList.add('hidden');
             signupModal.classList.add('hidden');
+            overallGpaDisplay.textContent = '--'; // Clear GPA on logout
         }
     });
 
@@ -132,9 +315,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('features-section').style.transform = 'translateY(0)';
     });
 
-    // --- Modal Switchers and Closers ---
+    // --- Modal Close Buttons ---
     closeLoginModalBtn.addEventListener('click', () => loginModal.classList.add('hidden'));
     closeSignupModalBtn.addEventListener('click', () => signupModal.classList.add('hidden'));
+
+    // --- Switch between Login/Signup Modals ---
     switchToSignupBtn.addEventListener('click', () => {
         loginModal.classList.add('hidden');
         signupModal.classList.remove('hidden');
@@ -144,155 +329,65 @@ document.addEventListener('DOMContentLoaded', async () => {
         loginModal.classList.remove('hidden');
     });
 
-    // --- Firebase Auth Forms (simplified for demonstration) ---
-    document.getElementById('login-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
-        const errorMessage = document.getElementById('login-error-message');
-        errorMessage.classList.add('hidden');
-        try {
-            // In a real app, you'd use signInWithEmailAndPassword
-            console.log("Login attempt (email/password not fully implemented for demo)");
-            // For now, just simulate success and switch to app layout
-            loginModal.classList.add('hidden');
-            mainAppLayout.classList.remove('hidden');
-            landingPage.classList.add('hidden');
-            displayPage('dashboard-page');
-            // A real login would involve: await signInWithEmailAndPassword(auth, email, password);
-        } catch (error) {
-            errorMessage.textContent = error.message;
-            errorMessage.classList.remove('hidden');
-        }
-    });
-
-    document.getElementById('signup-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('signup-email').value;
-        const password = document.getElementById('signup-password').value;
-        const errorMessage = document.getElementById('signup-error-message');
-        errorMessage.classList.add('hidden');
-        try {
-            // In a real app, you'd use createUserWithEmailAndPassword
-            console.log("Signup attempt (email/password not fully implemented for demo)");
-            // For now, just simulate success and switch to app layout
-            signupModal.classList.add('hidden');
-            mainAppLayout.classList.remove('hidden');
-            landingPage.classList.add('hidden');
-            displayPage('dashboard-page');
-            // A real signup would involve: await createUserWithEmailAndPassword(auth, email, password);
-        } catch (error) {
-            errorMessage.textContent = error.message;
-            errorMessage.classList.remove('hidden');
-        }
-    });
-
-    // Logout button
-    logoutBtn.addEventListener('click', async () => {
-        try {
-            await signOut(auth);
-            // onAuthStateChanged will handle UI update
-        } catch (error) {
-            console.error("Error logging out:", error);
-        }
-    });
-
     // --- Navigation Handlers ---
     navDashboard.addEventListener('click', () => displayPage('dashboard-page'));
     navTimeManagement.addEventListener('click', () => displayPage('time-management-page'));
-    navGradeTracker.addEventListener('click', () => displayPage('grade-tracker-page'));
+    navGradeTracker.addEventListener('click', renderGrades); // Call renderGrades to refresh data when navigating
     navExtracurriculars.addEventListener('click', () => displayPage('extracurriculars-page'));
     navCalendarSync.addEventListener('click', () => displayPage('calendar-sync-page'));
     navSettings.addEventListener('click', () => displayPage('settings-page'));
-
-    // --- AI Chat Functionality ---
-    sendAiChatBtn.addEventListener('click', sendAIChatMessage);
-    aiChatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault(); // Prevent new line
-            sendAIChatMessage();
+    logoutBtn.addEventListener('click', async () => {
+        try {
+            await signOut(auth);
+            alert('Logged out successfully!');
+        } catch (error) {
+            console.error("Error signing out:", error);
+            alert('Failed to log out. Please try again.');
         }
     });
 
-    async function sendAIChatMessage() {
+    // --- AI Chat Functionality ---
+    sendAiChatBtn.addEventListener('click', async () => {
         const userText = aiChatInput.value.trim();
-        if (userText === '') {
-            aiChatError.textContent = 'Please enter a message.';
-            aiChatError.classList.remove('hidden');
-            return;
-        }
+        if (userText === '') return;
 
+        aiChatOutput.innerHTML = ''; // Clear previous output
         aiChatError.classList.add('hidden');
         aiChatLoadingSpinner.classList.remove('hidden');
-        sendAiChatBtn.disabled = true;
-        aiChatInput.disabled = true;
-
-        // Display user message
-        const userMessageDiv = document.createElement('div');
-        userMessageDiv.className = 'flex justify-end mb-2';
-        userMessageDiv.innerHTML = `<div class="bg-indigo-500 text-white p-3 rounded-lg max-w-[80%]">${userText}</div>`;
-        aiChatOutput.prepend(userMessageDiv); // Add to top to maintain reverse order
-
-        aiChatInput.value = ''; // Clear input
 
         try {
-            const response = await fetch('http://localhost:5000/generate', { // Ensure this URL matches your Flask backend
+            const response = await fetch('http://127.0.0.1:5000/generate', { // Assuming backend runs on 5000
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ user_text: userText })
+                body: JSON.stringify({ user_text: userText }),
             });
 
-            const data = await response.json();
-
-            if (response.ok) {
-                const aiMessageDiv = document.createElement('div');
-                aiMessageDiv.className = 'flex justify-start mb-2';
-                aiMessageDiv.innerHTML = `<div class="bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100 p-3 rounded-lg max-w-[80%] prose dark:prose-invert">${data.response.replace(/\n/g, '<br>')}</div>`;
-                aiChatOutput.prepend(aiMessageDiv); // Add to top
-            } else {
-                aiChatError.textContent = `Error: ${data.error || 'Something went wrong on the server.'}`;
-                aiChatError.classList.remove('hidden');
-                const errorMessageDiv = document.createElement('div');
-                errorMessageDiv.className = 'flex justify-start mb-2';
-                errorMessageDiv.innerHTML = `<div class="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 p-3 rounded-lg max-w-[80%]">Error: ${data.error || 'Something went wrong.'}</div>`;
-                aiChatOutput.prepend(errorMessageDiv);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
             }
+
+            const data = await response.json();
+            aiChatOutput.innerHTML = data.response; // Display AI response
+            aiChatInput.value = ''; // Clear input
+
         } catch (error) {
-            console.error('Fetch error:', error);
-            aiChatError.textContent = 'Could not connect to the AI server. Please ensure the Python backend is running.';
+            console.error("Error generating AI response:", error);
+            aiChatError.textContent = `Error: ${error.message}. Please try again.`;
             aiChatError.classList.remove('hidden');
-            const errorMessageDiv = document.createElement('div');
-            errorMessageDiv.className = 'flex justify-start mb-2';
-            errorMessageDiv.innerHTML = `<div class="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 p-3 rounded-lg max-w-[80%]">Error: Could not connect to the AI server.</div>`;
-            aiChatOutput.prepend(errorMessageDiv);
         } finally {
             aiChatLoadingSpinner.classList.add('hidden');
-            sendAiChatBtn.disabled = false;
-            aiChatInput.disabled = false;
-            aiChatOutput.scrollTop = 0; // Scroll to top (since we prepend)
         }
-    }
+    });
 
-    // Placeholder functions for other pages (replace with actual logic later)
-    const renderGrades = () => {
-        const gradesListLoading = document.getElementById('grades-list-loading');
-        const gradesTableContainer = document.getElementById('grades-table-container');
-        const noGradesRecorded = document.getElementById('no-grades-recorded');
-        const courseAveragesSummary = document.getElementById('course-averages-summary');
-        
-        gradesListLoading.classList.remove('hidden');
-        gradesTableContainer.classList.add('hidden');
-        noGradesRecorded.classList.add('hidden');
-        courseAveragesSummary.classList.add('hidden');
-
-        // Simulate loading
-        setTimeout(() => {
-            gradesListLoading.classList.add('hidden');
-            noGradesRecorded.classList.remove('hidden'); // Show "no grades" initially
-        }, 1000);
-    };
+    // Allow sending AI chat message with Enter key
+    aiChatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            sendAiChatBtn.click();
+        }
+    });
 
     // Call renderGrades when grade tracker page is activated (or on initial load if user is logged in)
     navGradeTracker.addEventListener('click', renderGrades);
@@ -306,6 +401,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const userId = auth.currentUser.uid || crypto.randomUUID();
         userIdDisplay.textContent = `User ID: ${userId}`;
         displayPage('dashboard-page');
+        renderGrades(); // Render grades on initial load if user is logged in
     } else if (auth && !auth.currentUser) {
         loadingFirebase.classList.add('hidden');
         landingPage.classList.remove('hidden');
