@@ -8,14 +8,15 @@ import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, doc, 
 
 // YOUR FIREBASE CONFIGURATION - REPLACE WITH YOUR ACTUAL VALUES FROM FIREBASE CONSOLE
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY", // <--- REPLACE THIS WITH YOUR ACTUAL API KEY
-  authDomain: "YOUR_AUTH_DOMAIN", // <--- REPLACE THIS WITH YOUR ACTUAL AUTH DOMAIN
-  projectId: "YOUR_PROJECT_ID", // <--- REPLACE THIS WITH YOUR ACTUAL PROJECT ID
-  storageBucket: "YOUR_STORAGE_BUCKET", // <--- REPLACE THIS WITH YOUR ACTUAL STORAGE BUCKET
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID", // <--- REPLACE THIS WITH YOUR ACTUAL MESSAGING SENDER ID
-  appId: "YOUR_APP_ID", // <--- REPLACE THIS WITH YOUR ACTUAL APP ID
-  measurementId: "YOUR_MEASUREMENT_ID" // Optional, if you use analytics, otherwise can remove or leave empty
+  apiKey: "AIzaSyBMDzrZurHNHR_5QMIGzCOisVoAxOJ0d08",
+  authDomain: "congressional-app-challe-eb3be.firebaseapp.com",
+  projectId: "congressional-app-challe-eb3be",
+  storageBucket: "congressional-app-challe-eb3be.firebasestorage.app",
+  messagingSenderId: "182459835746",
+  appId: "1:182459835746:web:8ae5e7a988dc88bb7e383b",
+  measurementId: "G-JRLCDXSSLT"
 };
+
 
 // Global variables (derived from firebaseConfig or set to null/defaults)
 const appId = firebaseConfig.appId;
