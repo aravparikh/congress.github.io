@@ -4,11 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Planner</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Link to external CSS file -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-inter antialiased">
 
+    <!-- Loading Spinner for Firebase Init -->
     <div id="loading-firebase" class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 absolute inset-0 z-50">
         <div class="flex items-center space-x-2 text-gray-700 dark:text-gray-300">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
@@ -16,9 +19,12 @@
         </div>
     </div>
 
+    <!-- Landing Page -->
     <div id="landing-page" class="w-full min-h-screen flex flex-col items-center bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 relative overflow-hidden">
+        <!-- Background Circle -->
         <div class="landing-hero-bg-circle"></div>
 
+        <!-- Landing Page Header/Navbar -->
         <header class="w-full relative z-20 p-4 md:px-12 flex justify-between items-center bg-white dark:bg-gray-900 shadow-sm">
             <div class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
                 Student Planner
@@ -33,6 +39,7 @@
             </nav>
         </header>
 
+        <!-- Hero Section Content -->
         <section class="relative z-10 flex flex-col md:flex-row items-center justify-center w-full max-w-7xl mx-auto p-8 md:p-12 flex-grow">
             <div class="md:w-1/2 text-center md:text-left mb-8 md:mb-0 md:pr-12">
                 <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-4 animate-fade-in-down text-gray-900 dark:text-gray-100">
@@ -54,10 +61,12 @@
                 </p>
             </div>
             <div class="md:w-1/2 flex justify-center md:justify-end relative">
+                <!-- Placeholder for the large visual -->
                 <img src="https://placehold.co/400x300/22C55E/FFFFFF?text=App+Preview" alt="App Preview" class="rounded-xl shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-500 max-w-full h-auto">
             </div>
         </section>
 
+        <!-- Features Section -->
         <section id="features-section" class="w-full max-w-6xl bg-gray-100 dark:bg-gray-800 rounded-xl shadow-2xl p-8 md:p-12 mt-16 mb-12 text-gray-900 dark:text-gray-100 opacity-0 transform translate-y-10 transition-all duration-700 ease-out">
             <h2 class="text-3xl md:text-4xl font-bold text-center mb-10 text-indigo-700 dark:text-indigo-400">What Our App Can Do</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -79,11 +88,13 @@
             </div>
         </section>
 
+        <!-- Concluding Message -->
         <section class="text-center text-gray-700 dark:text-gray-300 mt-12 mb-8">
             <p class="text-3xl font-bold">Learn. Grow. Succeed.</p>
         </section>
     </div>
 
+    <!-- Login Modal -->
     <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
         <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl max-w-md w-full mx-4 relative">
             <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center">Login to Student Planner</h2>
@@ -117,6 +128,7 @@
         </div>
     </div>
 
+    <!-- Sign Up Modal -->
     <div id="signup-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
         <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl max-w-md w-full mx-4 relative">
             <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center">Sign Up for Student Planner</h2>
@@ -147,7 +159,9 @@
         </div>
     </div>
 
+    <!-- Main App Layout (Sidebar + Main Content Area) -->
     <div id="main-app-layout" class="w-full min-h-screen flex flex-col md:flex-row hidden">
+        <!-- Sidebar Navigation -->
         <aside class="w-full md:w-64 bg-white dark:bg-gray-800 shadow-lg md:shadow-none p-4 flex flex-row md:flex-col justify-around md:justify-start items-center md:items-stretch border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700">
             <div id="sidebar-app-title" class="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mb-6 cursor-pointer hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors duration-200 hidden md:block">
                 Student Planner
@@ -162,147 +176,349 @@
                     <span class="hidden md:block text-sm font-medium">Time Management</span>
                 </button>
                 <button id="nav-grade-tracker" class="nav-item flex items-center space-x-3 p-3 rounded-lg transition-colors duration-200 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 w-full justify-center md:justify-start">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-6"/><path d="M12 17.5v4.5"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucade-graduation-cap"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-6"/><path d="M12 17.5v4.5"/></svg>
                     <span class="hidden md:block text-sm font-medium">Grade Tracker</span>
                 </button>
                 <button id="nav-extracurriculars" class="nav-item flex items-center space-x-3 p-3 rounded-lg transition-colors duration-200 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 w-full justify-center md:justify-start">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     <span class="hidden md:block text-sm font-medium">Extracurriculars</span>
                 </button>
                 <button id="nav-calendar-sync" class="nav-item flex items-center space-x-3 p-3 rounded-lg transition-colors duration-200 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 w-full justify-center md:justify-start">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-days"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-days"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
                     <span class="hidden md:block text-sm font-medium">Calendar Sync</span>
                 </button>
                 <button id="nav-settings" class="nav-item flex items-center space-x-3 p-3 rounded-lg transition-colors duration-200 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 w-full justify-center md:justify-start">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.78 1.28a2 2 0 0 0 .73 2.73l.15.08a2 2 0 0 1 1 1.74v.18a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.78-1.28a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2.73l-.15.1a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1 0 2.73l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                     <span class="hidden md:block text-sm font-medium">Settings</span>
                 </button>
             </nav>
-            <div class="mt-auto w-full pt-4 border-t border-gray-200 dark:border-gray-700 hidden md:block">
-                <button id="logout-btn" class="flex items-center space-x-3 p-3 rounded-lg transition-colors duration-200 text-gray-600 dark:text-gray-300 hover:bg-red-100 dark:hover:bg-red-700 hover:text-red-600 dark:hover:text-white w-full justify-center md:justify-start">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-out"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
-                    <span class="hidden md:block text-sm font-medium">Logout</span>
-                </button>
+            <div id="user-id-display" class="mt-auto p-4 text-sm text-gray-500 dark:text-gray-400 hidden md:block">
+                <!-- User ID will be displayed here -->
             </div>
-            <div class="md:hidden w-full flex justify-center mt-4">
-                <span id="user-id-display-mobile" class="text-xs text-gray-500 dark:text-gray-400"></span>
-            </div>
+            <button id="logout-btn" class="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-sm w-full">
+                Logout
+            </button>
         </aside>
 
-        <main class="flex-grow p-4 md:p-8 overflow-y-auto">
-            <div class="hidden md:block text-right mb-4">
-                <span id="user-id-display" class="text-sm text-gray-500 dark:text-gray-400"></span>
-            </div>
-
-            <div id="dashboard-page" class="page-content active space-y-6">
+        <!-- Main Content Area -->
+        <main id="app-main-content-area" class="flex-1 p-6 md:p-8 overflow-auto">
+            <!-- Dashboard Page -->
+            <div id="dashboard-page" class="page-content space-y-6">
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
-                        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2">Overall GPA (4.0 Scale)</h2>
-                        <p id="overall-gpa-display" class="text-4xl font-bold text-indigo-600 dark:text-indigo-400">--</p>
-                    </div>
 
-                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
-                        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2">Upcoming Assignments</h2>
-                        <p class="text-gray-600 dark:text-gray-300">No assignments due soon.</p>
+                <!-- Overview Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                        <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">Overall GPA</h2>
+                        <p id="overall-gpa" class="text-4xl font-bold text-indigo-600 dark:text-indigo-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin inline-block mr-2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                        </p>
                     </div>
-                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
-                        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2">Recent Activities</h2>
-                        <p class="text-gray-600 dark:text-gray-300">No recent activities recorded.</p>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                        <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">Upcoming Tasks</h2>
+                        <p class="text-4xl font-bold text-green-600 dark:text-green-400">0</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">No tasks currently scheduled.</p>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                        <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">Time Summary (AI)</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            AI-generated time summary will appear here to help you achieve your goals.
+                        </p>
+                        <!-- Removed these buttons as AI chat is now in Time Management page -->
+                        <div id="send-date-message" class="mt-2 text-sm"></div>
                     </div>
                 </div>
 
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
-                    <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">AI Schedule Summary</h2>
-                    <div id="ai-chat-output" class="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300">
-                        <p>Your AI assistant is ready to help you plan your day!</p>
+                <!-- Recent Grades -->
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent Grades</h2>
+                    <div id="recent-grades-loading" class="flex items-center justify-center py-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin mr-2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                        <span>Loading grades...</span>
                     </div>
-                    <div id="ai-chat-loading-spinner" class="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400 hidden mt-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                        <span>Generating response...</span>
+                    <div id="recent-grades-list" class="overflow-x-auto">
+                        <!-- Recent grades will be rendered here -->
                     </div>
-                    <div id="ai-chat-error" class="text-red-600 dark:text-red-400 text-sm mt-2 hidden"></div>
-                    <div class="mt-4 flex">
-                        <input type="text" id="ai-chat-input" placeholder="Type your request here..." class="flex-grow p-3 border border-gray-300 dark:border-gray-600 rounded-l-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500">
-                        <button id="send-ai-chat-btn" class="px-6 py-3 bg-indigo-600 text-white rounded-r-lg hover:bg-indigo-700 transition-colors duration-200">
+                    <p id="no-recent-grades" class="text-gray-500 dark:text-gray-400 hidden">No grades recorded yet. Add some in the Grade Tracker!</p>
+                </div>
+            </div>
+
+            <!-- Time Management Page (Now includes AI Chat) -->
+            <div id="time-management-page" class="page-content space-y-6">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Time Management & AI Planner</h1>
+
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Chat with your AI Planner Assistant</h2>
+                    <p class="text-gray-600 dark:text-gray-300 mb-4">
+                        Describe your typical day, academic goals, and any specific commitments, and I'll generate an example schedule for you.
+                        Type "generate schedule" to get a schedule.
+                    </p>
+                    
+                    <!-- AI Chat Output Area -->
+                    <div id="ai-chat-output" class="border border-gray-300 dark:border-gray-600 rounded-lg p-4 h-80 overflow-y-auto mb-4 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 flex flex-col-reverse">
+                        <!-- AI and user messages will appear here -->
+                    </div>
+
+                    <!-- AI Chat Input Area -->
+                    <div class="flex space-x-2">
+                        <textarea
+                            id="ai-chat-input"
+                            class="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500 resize-y min-h-[50px] max-h-[150px]"
+                            placeholder="Type your message here..."
+                        ></textarea>
+                        <button
+                            id="send-ai-chat-btn"
+                            class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200 flex items-center justify-center"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send mr-2"><path d="m22 2-7 20-4-9-9-4 20-7Z"/><path d="M15 15l4 4"/></svg>
                             Send
                         </button>
                     </div>
+                    <div id="ai-chat-loading-spinner" class="mt-2 flex items-center justify-center text-gray-700 dark:text-gray-300 hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin mr-2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                        <span>AI is thinking...</span>
+                    </div>
+                    <div id="ai-chat-error" class="mt-4 p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded-lg hidden">
+                        <!-- Error messages will appear here -->
+                    </div>
                 </div>
             </div>
 
-            <div id="time-management-page" class="page-content space-y-6">
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Time Management</h1>
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
-                    <p class="text-gray-700 dark:text-gray-300">This section is coming soon! You'll be able to manage your schedule here.</p>
-                </div>
-            </div>
-
+            <!-- Grade Tracker Page -->
             <div id="grade-tracker-page" class="page-content space-y-6">
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Grade Tracker</h1>
-                
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
-                    <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Add New Grade</h2>
-                    <form id="add-grade-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                <div id="grade-message" class="p-3 rounded-lg hidden">
+                    <!-- Success/Error messages for grades will appear here -->
+                </div>
+
+                <!-- Add New Grade Form -->
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Add New Grade</h2>
+                    <form id="add-grade-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div>
-                            <label for="course-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Course Name</label>
-                            <input type="text" id="course-name" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500" required>
+                            <label for="grade-course" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Course Name</label>
+                            <input
+                                type="text"
+                                id="grade-course"
+                                name="course"
+                                class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500"
+                                placeholder="e.g., Algebra II"
+                                required
+                            />
                         </div>
                         <div>
-                            <label for="assignment-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Assignment Name</label>
-                            <input type="text" id="assignment-name" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500" required>
+                            <label for="grade-assignment" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Assignment Name</label>
+                            <input
+                                type="text"
+                                id="grade-assignment"
+                                name="assignment"
+                                class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500"
+                                placeholder="e.g., Midterm Exam"
+                                required
+                            />
                         </div>
                         <div>
-                            <label for="percentage-grade" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Percentage Grade</label>
-                            <input type="number" id="percentage-grade" min="0" max="100" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500" required>
+                            <label for="grade-score" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Score (0-100)</label>
+                            <input
+                                type="number"
+                                id="grade-score"
+                                name="score"
+                                step="0.1"
+                                min="0"
+                                max="100"
+                                class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500"
+                                placeholder="e.g., 92.5"
+                                required
+                            />
                         </div>
                         <div>
-                            <label for="credit-hours" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Credit Hours</label>
-                            <input type="number" id="credit-hours" min="1" max="10" value="3" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500" required>
+                            <label for="grade-letter-grade" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Letter Grade</label>
+                            <select
+                                id="grade-letter-grade"
+                                name="letterGrade"
+                                class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500"
+                                required
+                            >
+                                <option value="">Select Grade</option>
+                                <option value="A+">A+</option>
+                                <option value="A">A</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B">B</option>
+                                <option value="B-">B-</option>
+                                <option value="C+">C+</option>
+                                <option value="C">C</option>
+                                <option value="C-">C-</option>
+                                <option value="D+">D+</option>
+                                <option value="D">D</option>
+                                <option value="D-">D-</option>
+                                <option value="F">F</option>
+                            </select>
                         </div>
-                        <div class="md:col-span-2 text-right">
-                            <button type="submit" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200">
-                                Add Grade
+                        <div>
+                            <label for="grade-weight" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Weight (%)</label>
+                            <input
+                                type="number"
+                                id="grade-weight"
+                                name="weight"
+                                step="1"
+                                min="0"
+                                max="100"
+                                class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500"
+                                placeholder="e.g., 20 (for 20%)"
+                                value="1"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label for="grade-date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                            <input
+                                type="date"
+                                id="grade-date"
+                                name="date"
+                                class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500"
+                                required
+                            />
+                        </div>
+                        <div class="md:col-span-2 lg:col-span-3 flex items-center">
+                            <input
+                                type="checkbox"
+                                id="grade-is-ap"
+                                name="isAp"
+                                class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600"
+                            />
+                            <label for="grade-is-ap" class="ml-2 block text-sm text-gray-900 dark:text-gray-100">Is AP Class?</label>
+                        </div>
+                        <div class="md:col-span-2 lg:col-span-3">
+                            <button
+                                type="submit"
+                                class="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200 flex items-center justify-center"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus mr-2"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Add Grade
                             </button>
                         </div>
                     </form>
                 </div>
 
-                <div id="grades-list-loading" class="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400 mt-4 hidden">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                    <span>Loading grades...</span>
-                </div>
-                <div id="grades-table-container" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 hidden">
-                    <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Your Grades</h2>
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Course</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Assignment</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Percentage</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Grade Point (4.0)</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Credit Hours</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="grades-table-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <!-- Current Grades List -->
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Your Grades</h2>
+                    <div id="grades-list-loading" class="flex items-center justify-center py-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin mr-2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                        <span>Loading grades...</span>
+                    </div>
+                    <div id="grades-table-container" class="overflow-x-auto mb-6 hidden">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider rounded-tl-lg">
+                                        Course
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        Assignment
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        Score
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        Letter
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        Weight
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        AP
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        Date
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider rounded-tr-lg">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="grades-table-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                <!-- Grades will be rendered here -->
                             </tbody>
-                    </table>
-                </div>
-                <div id="no-grades-recorded" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 hidden">
-                    <p class="text-gray-700 dark:text-gray-300 text-center">No grades recorded yet. Add your first grade above!</p>
-                </div>
+                        </table>
+                    </div>
+                    <p id="no-grades-recorded" class="text-gray-500 dark:text-gray-400 hidden">No grades recorded yet. Use the form above to add your first grade!</p>
 
-                <div id="course-averages-summary" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 hidden">
-                    <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Course Averages</h2>
-                    <div id="course-averages-list" class="space-y-2">
-                        <p class="text-gray-700 dark:text-gray-300">Course averages will appear here.</p>
+                    <!-- Course Averages Summary -->
+                    <div id="course-averages-summary" class="hidden">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Course Averages:</h3>
+                        <ul id="course-averages-list" class="space-y-2">
+                            <!-- Course averages will be rendered here -->
+                        </ul>
                     </div>
                 </div>
+            </div>
 
-                <div id="percentage-rules-section" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
-                    <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Percentage Rules for GPA Conversion</h2>
+            <!-- Extracurriculars Page -->
+            <div id="extracurriculars-page" class="page-content space-y-6">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Extracurricular Roadmap</h1>
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">AI-Suggested Extracurriculars</h2>
+                    <p class="text-gray-600 dark:text-gray-300 mb-4">
+                        This section will use AI to suggest extracurricular activities based on your interests and goals, and help you explore them.
+                    </p>
+                    <button class="px-6 py-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors duration-200">
+                        Get Suggestions
+                    </button>
+                </div>
+            </div>
+
+            <!-- Calendar Sync Page -->
+            <div id="calendar-sync-page" class="page-content space-y-6">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Calendar Synchronization</h1>
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Sync with Google/Microsoft Calendar</h2>
+                    <p class="text-gray-600 dark:text-gray-300 mb-4">
+                        This feature will allow you to sync your generated schedules and tasks with your Google Calendar or Microsoft Outlook Calendar.
+                    </p>
+                    <div class="flex space-x-4">
+                        <button class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                            Sync with Google Calendar
+                        </button>
+                        <button class="px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors duration-200">
+                            Sync with Microsoft Calendar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Page -->
+            <div id="settings-page" class="page-content space-y-6">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Settings</h1>
+
+                <!-- GPA Scale Configuration -->
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">GPA Scale Configuration</h2>
+                    <p class="text-gray-600 dark:text-gray-300 mb-4">Customize the grade points for each letter grade.</p>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Letter Grade</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Grade Points</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gpa-scale-table-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                <!-- GPA scale inputs will be rendered here by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <button id="save-gpa-settings-btn" class="mt-4 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200">
+                        Save GPA Settings
+                    </button>
+                    <div id="gpa-settings-message" class="mt-2 text-sm hidden"></div>
+                </div>
+
+                <!-- Percentage to Letter Grade Rules -->
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Percentage to Letter Grade Rules</h2>
+                    <p class="text-gray-600 dark:text-gray-300 mb-4">Define the percentage ranges for each letter grade.</p>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead class="bg-gray-50 dark:bg-gray-700">
@@ -313,31 +529,7 @@
                                 </tr>
                             </thead>
                             <tbody id="percentage-rules-table-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">A</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">90</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">100</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">B</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">80</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">89</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">C</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">70</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">79</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">D</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">60</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">69</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">F</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">0</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">59</td>
-                                </tr>
+                                <!-- Percentage rules inputs will be rendered here by JavaScript -->
                             </tbody>
                         </table>
                     </div>
@@ -350,6 +542,7 @@
         </main>
     </div>
 
+    <!-- Link to external JavaScript file -->
     <script type="module" src="app.js"></script>
 </body>
 </html>
