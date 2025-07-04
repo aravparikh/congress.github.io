@@ -3,30 +3,30 @@
 // Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-// Firestore imports are commented out as they are not directly used in this AI chat example,
-// but included for completeness if you expand the app.
-// import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+// Import Firestore modules - THESE ARE NOW UNCOMMENTED AND USED
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+// YOUR FIREBASE CONFIGURATION - REPLACE WITH YOUR ACTUAL VALUES FROM FIREBASE CONSOLE
 const firebaseConfig = {
-  apiKey: "AIzaSyBMDzrZurHNHR_5QMIGzCOisVoAxOJ0d08",
-  authDomain: "congressional-app-challe-eb3be.firebaseapp.com",
-  projectId: "congressional-app-challe-eb3be",
-  storageBucket: "congressional-app-challe-eb3be.firebasestorage.app",
-  messagingSenderId: "182459835746",
-  appId: "1:182459835746:web:8ae5e7a988dc88bb7e383b",
-  measurementId: "G-JRLCDXSSLT"
+  apiKey: "YOUR_API_KEY", // <--- REPLACE THIS
+  authDomain: "YOUR_AUTH_DOMAIN", // <--- REPLACE THIS
+  projectId: "YOUR_PROJECT_ID", // <--- REPLACE THIS
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID",
+  measurementId: "YOUR_MEASUREMENT_ID" // Optional, if you use analytics
 };
 
-// Global variables
-const appId = firebaseConfig.appId; 
+// Global variables (derived from firebaseConfig or set to null/defaults)
+const appId = firebaseConfig.appId;
 const initialAuthToken = null; // Set to null as it's not provided by your environment anymore
 
 let app;
 let auth;
-let db; // Placeholder for Firestore, not used in this specific AI chat functionality
+let db; // This will now hold your Firestore instance
 
 // GPA Calculator Data and Settings
-let userCourses = []; // Array to store course objects: { id: uuid, name: string, credits: number, grade: string }
+// Note: userCourses will now be loaded from Firestore
 let gradePointMap = {
     'A+': 4.3,
     'A': 4.0,
@@ -104,6 +104,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const requiredGpaDisplay = document.getElementById('required-gpa-display');
     const planningGpaMessage = document.getElementById('planning-gpa-message');
 
+    // Dashboard GPA and Recent Grades elements
+    const overallGpaDashboard = document.getElementById('overall-gpa');
+    const recentGradesListDashboard = document.getElementById('recent-grades-list');
+    const recentGradesLoadingDashboard = document.getElementById('recent-grades-loading');
+    const noRecentGradesDashboard = document.getElementById('no-recent-grades');
+
 
     // Function to display a specific page
     const displayPage = (pageId) => {
@@ -114,7 +120,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Special handling for Grade Tracker page
         if (pageId === 'grade-tracker-page') {
-            renderGPACalculator(); // Render the GPA calculator when navigating to this page
+            loadGrades(); // Load and render the GPA calculator when navigating to this page
+        } else if (pageId === 'dashboard-page') {
+            updateDashboardGrades(); // Update dashboard when navigating to it
         }
 
         // Update active navigation item styling
@@ -129,11 +137,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    // Initialize Firebase
+    // Initialize Firebase App and Firestore
     try {
         app = initializeApp(firebaseConfig);
         auth = getAuth(app);
-        // db = getFirestore(app); // Initialize Firestore if needed for other features
+        db = getFirestore(app); // Initialize Firestore here
     } catch (error) {
         console.error("Firebase initialization error:", error);
         loadingFirebase.innerHTML = `<div class="text-red-600 dark:text-red-400">Error initializing Firebase. Please check your configuration and ensure you are connected to the internet.</div>`;
@@ -151,6 +159,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const userId = user.uid || crypto.randomUUID(); // Fallback for anonymous
             userIdDisplay.textContent = `User ID: ${userId}`;
             displayPage('dashboard-page'); // Show dashboard by default after login
+            // Initial data loads after successful authentication
+            await loadGrades(); // Load grades for Grade Tracker
+            await updateDashboardGrades(); // Update dashboard
         } else {
             // User is signed out
             console.log("Firebase Auth State Changed: User signed out.");
@@ -158,6 +169,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             mainAppLayout.classList.add('hidden');
             loginModal.classList.add('hidden');
             signupModal.classList.add('hidden');
+            // Clear any displayed user data if signed out
+            overallGpaDashboard.textContent = 'N/A';
+            recentGradesListDashboard.innerHTML = '';
+            noRecentGradesDashboard.classList.remove('hidden');
+            coursesListBody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 whitespace-nowrap text-center text-gray-500 dark:text-gray-400">Please log in to view your courses.</td></tr>`;
+            gpaDisplay.textContent = '0.00';
+            gpaTotalCreditsDisplay.textContent = '0.0';
         }
     });
 
@@ -342,7 +360,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // --- GPA Calculator Functions ---
+    // --- GPA Calculator Functions (Now uses Firestore) ---
 
     // Renders the grade point settings inputs
     const renderGradePointSettings = () => {
@@ -355,8 +373,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 settingDiv.className = 'flex items-center space-x-2';
                 settingDiv.innerHTML = `
                     <label for="gp-${grade}" class="text-gray-700 dark:text-gray-300 font-medium">${grade}:</label>
-                    <input type="number" id="gp-${grade}" 
-                           class="w-full rounded-md border-gray-300 shadow-sm sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 p-1" 
+                    <input type="number" id="gp-${grade}"
+                           class="w-full rounded-md border-gray-300 shadow-sm sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 p-1"
                            step="0.1" min="0" max="4.3" value="${gradePointMap[grade].toFixed(1)}">
                 `;
                 gradePointSettingsContainer.appendChild(settingDiv);
@@ -366,21 +384,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const newPoints = parseFloat(e.target.value);
                     if (!isNaN(newPoints) && newPoints >= 0 && newPoints <= 4.3) {
                         gradePointMap[grade] = newPoints;
-                        renderGPACalculator(); // Recalculate GPA on setting change
+                        // No need to reload grades from Firestore, just re-render current data
+                        // If you want to persist these settings, you'd save them to Firestore too.
+                        loadGrades(); // Recalculate and re-render GPA based on new map
                     }
                 });
             }
         }
     };
 
-    // Calculates GPA based on userCourses and gradePointMap
-    const calculateGPA = () => {
+    // Calculates GPA based on provided courses and gradePointMap
+    const calculateGPA = (courses) => {
         let totalWeightedPoints = 0;
         let totalCredits = 0;
 
-        userCourses.forEach(course => {
+        courses.forEach(course => {
             const gradePoints = gradePointMap[course.grade];
-            if (gradePoints !== null && gradePoints !== undefined) { // Check if grade has a numerical point
+            if (gradePoints !== null && gradePoints !== undefined) { // Only count grades that affect GPA
                 totalWeightedPoints += gradePoints * course.credits;
                 totalCredits += course.credits;
             }
@@ -390,151 +410,245 @@ document.addEventListener('DOMContentLoaded', async () => {
         return { gpa: gpa.toFixed(2), totalCredits: totalCredits.toFixed(1) };
     };
 
-    // Renders the courses table and updates GPA display
-    const renderGPACalculator = () => {
-        coursesListBody.innerHTML = ''; // Clear existing rows
-
-        if (userCourses.length === 0) {
-            noCoursesRow.classList.remove('hidden');
-            coursesListBody.appendChild(noCoursesRow);
+    // Loads grades from Firestore and renders the courses table and updates GPA display
+    async function loadGrades() {
+        const userId = auth.currentUser ? auth.currentUser.uid : null;
+        if (!userId) {
+            coursesListBody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 whitespace-nowrap text-center text-gray-500 dark:text-gray-400">Please log in to view your courses.</td></tr>`;
+            noCoursesRow.classList.add('hidden'); // Hide if explicitly showing login message
+            gpaDisplay.textContent = '0.00';
+            gpaTotalCreditsDisplay.textContent = '0.0';
             gpaTableContainer.classList.add('hidden');
             gpaSummary.classList.add('hidden');
-        } else {
-            noCoursesRow.classList.add('hidden');
-            gpaTableContainer.classList.remove('hidden');
-            gpaSummary.classList.remove('hidden');
+            return;
+        }
 
-            userCourses.forEach((course, index) => {
-                const gradePoints = gradePointMap[course.grade];
-                const weightedPoints = gradePoints !== null && gradePoints !== undefined ? (gradePoints * course.credits).toFixed(2) : 'N/A';
-                const gradePointsDisplay = gradePoints !== null && gradePoints !== undefined ? gradePoints.toFixed(1) : 'N/A';
+        // Show loading state for grade tracker table
+        noCoursesRow.classList.add('hidden'); // Hide "No courses added yet" while loading
+        coursesListBody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 whitespace-nowrap text-center text-gray-500 dark:text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin inline-block mr-2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Loading courses...
+        </td></tr>`;
 
-                const row = document.createElement('tr');
-                row.className = 'hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150';
-                row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">${course.name || 'Untitled Course'}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${course.credits.toFixed(1)}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${course.grade}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${gradePointsDisplay}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${weightedPoints}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button data-id="${course.id}" class="delete-course-btn text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Delete</button>
-                    </td>
-                `;
-                coursesListBody.appendChild(row);
+        let currentCourses = []; // Local array to hold fetched courses
+        try {
+            const gradesCollectionRef = collection(db, `users/${userId}/grades`);
+            const querySnapshot = await getDocs(gradesCollectionRef);
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                currentCourses.push({ id: doc.id, ...data });
             });
 
-            // Attach event listeners for delete buttons
-            document.querySelectorAll('.delete-course-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const courseIdToDelete = e.target.dataset.id;
-                    userCourses = userCourses.filter(course => course.id !== courseIdToDelete);
-                    renderGPACalculator(); // Re-render after deletion
+            coursesListBody.innerHTML = ''; // Clear loading/no courses message
+
+            if (currentCourses.length === 0) {
+                noCoursesRow.classList.remove('hidden');
+                gpaTableContainer.classList.add('hidden');
+                gpaSummary.classList.add('hidden');
+            } else {
+                noCoursesRow.classList.add('hidden'); // Ensure it's hidden if courses exist
+                gpaTableContainer.classList.remove('hidden');
+                gpaSummary.classList.remove('hidden');
+
+                currentCourses.forEach(course => {
+                    const gradePoint = gradePointMap[course.grade];
+                    const weightedPoints = gradePoint !== null && gradePoint !== undefined ? (gradePoint * course.credits).toFixed(2) : 'N/A';
+                    const gradePointsDisplay = gradePoint !== null && gradePoint !== undefined ? gradePoint.toFixed(1) : 'N/A';
+
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150';
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">${course.name || 'Untitled Course'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${course.credits.toFixed(1)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${course.grade}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${gradePointsDisplay}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${weightedPoints}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button data-id="${course.id}" class="delete-course-btn text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                            </button>
+                        </td>
+                    `;
+                    coursesListBody.appendChild(row);
                 });
+
+                document.querySelectorAll('.delete-course-btn').forEach(button => {
+                    button.addEventListener('click', deleteCourse);
+                });
+            }
+
+            const { gpa, totalCredits } = calculateGPA(currentCourses);
+            gpaTotalCreditsDisplay.textContent = totalCredits;
+            gpaDisplay.textContent = gpa;
+
+            renderGradePointSettings(); // Always render settings when GPA is rendered/updated
+
+        } catch (e) {
+            console.error("Error loading grades: ", e);
+            coursesListBody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 whitespace-nowrap text-center text-red-600 dark:text-red-400">Error loading courses.</td></tr>`;
+            noCoursesRow.classList.add('hidden');
+            gpaTableContainer.classList.add('hidden');
+            gpaSummary.classList.add('hidden');
+        }
+    }
+
+    async function deleteCourse(event) {
+        const userId = auth.currentUser ? auth.currentUser.uid : null;
+        if (!userId) return;
+
+        const courseId = event.currentTarget.dataset.id;
+        // Using a custom modal for confirmation instead of alert/confirm
+        showCustomConfirm("Are you sure you want to delete this course?", async () => {
+            try {
+                await deleteDoc(doc(db, `users/${userId}/grades`, courseId));
+                await loadGrades(); // Reload grades after deletion
+                await updateDashboardGrades(); // Update dashboard
+            } catch (e) {
+                console.error("Error deleting document: ", e);
+                showCustomAlert("Error deleting course. Please try again.");
+            }
+        });
+    }
+
+    // Function to update Recent Grades and Overall GPA on Dashboard
+    async function updateDashboardGrades() {
+        recentGradesLoadingDashboard.classList.remove('hidden');
+        recentGradesListDashboard.innerHTML = '';
+        noRecentGradesDashboard.classList.add('hidden');
+        overallGpaDashboard.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin inline-block mr-2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`;
+
+
+        const userId = auth.currentUser ? auth.currentUser.uid : null;
+        if (!userId) {
+            recentGradesLoadingDashboard.classList.add('hidden');
+            noRecentGradesDashboard.classList.remove('hidden');
+            overallGpaDashboard.textContent = 'N/A';
+            return;
+        }
+
+        let allCourses = [];
+        try {
+            const gradesCollectionRef = collection(db, `users/${userId}/grades`);
+            const querySnapshot = await getDocs(gradesCollectionRef); // Get all for GPA calculation
+
+            querySnapshot.forEach((doc) => {
+                allCourses.push({ id: doc.id, ...doc.data() });
             });
+
+            // Calculate overall GPA for dashboard
+            const { gpa } = calculateGPA(allCourses);
+            overallGpaDashboard.textContent = gpa;
+
+            // Sort courses by timestamp for recent grades display
+            const recentCourses = [...allCourses].sort((a, b) => b.timestamp.toDate().getTime() - a.timestamp.toDate().getTime()).slice(0, 5);
+
+            recentGradesLoadingDashboard.classList.add('hidden');
+
+            if (recentCourses.length === 0) {
+                noRecentGradesDashboard.classList.remove('hidden');
+            } else {
+                recentCourses.forEach((course) => {
+                    const gradeItem = document.createElement('div');
+                    gradeItem.className = 'flex items-center justify-between py-2 border-b last:border-b-0 border-gray-200 dark:border-gray-700';
+                    gradeItem.innerHTML = `
+                        <span class="text-gray-800 dark:text-gray-200">${course.name || 'Unnamed Course'}</span>
+                        <span class="text-lg font-semibold text-indigo-600 dark:text-indigo-400">${course.grade}</span>
+                    `;
+                    recentGradesListDashboard.appendChild(gradeItem);
+                });
+            }
+        } catch (e) {
+            console.error("Error updating dashboard grades:", e);
+            recentGradesLoadingDashboard.classList.add('hidden');
+            noRecentGradesDashboard.classList.remove('hidden');
+            recentGradesListDashboard.innerHTML = `<p class="text-red-600 dark:text-red-400">Error loading recent grades.</p>`;
+            overallGpaDashboard.textContent = 'Error';
         }
+    }
 
-        const { gpa, totalCredits } = calculateGPA();
-        gpaTotalCreditsDisplay.textContent = totalCredits;
-        gpaDisplay.textContent = gpa;
-
-        renderGradePointSettings(); // Always render settings when GPA is rendered/updated
-    };
-
-    // Add Course Function
-    addCourseBtn.addEventListener('click', () => {
-        const name = newCourseNameInput.value.trim();
-        const credits = parseFloat(newCourseCreditsInput.value);
-        const grade = newCourseGradeSelect.value;
-
-        addCourseMessage.classList.add('hidden'); // Hide previous messages
-
-        if (isNaN(credits) || credits <= 0) {
-            addCourseMessage.textContent = 'Please enter valid credits (a number greater than 0).';
-            addCourseMessage.classList.remove('hidden');
-            return;
-        }
-        if (!grade) {
-            addCourseMessage.textContent = 'Please select a grade.';
-            addCourseMessage.classList.remove('hidden');
-            return;
-        }
-
-        const newCourse = {
-            id: crypto.randomUUID(), // Unique ID for each course
-            name: name,
-            credits: credits,
-            grade: grade
-        };
-
-        userCourses.push(newCourse);
-        renderGPACalculator(); // Re-render the list and GPA
-
-        // Clear form
-        newCourseNameInput.value = '';
-        newCourseCreditsInput.value = '1.0';
-        newCourseGradeSelect.value = '';
-    });
-
-    // Event listeners for recalculating GPA when input fields change (for existing courses)
-    // This part is handled by re-rendering the whole table which re-attaches listeners
-    // For now, new course addition is the primary way to add/update data.
-    // In a more complex app, you might add inline editing.
-
-    // --- GPA Planning Calculator Logic ---
-    calculatePlanningGpaBtn.addEventListener('click', () => {
-        const currentGpa = parseFloat(currentGpaInput.value);
-        const currentCredits = parseFloat(currentGpaCreditsInput.value);
-        const additionalCredits = parseFloat(additionalCreditsInput.value);
-        const targetGpa = parseFloat(targetGpaInput.value);
-
-        planningGpaResultDiv.classList.add('hidden');
-        planningGpaMessage.classList.add('hidden');
-        requiredGpaDisplay.textContent = 'N/A';
-
-        if (isNaN(currentGpa) || isNaN(currentCredits) || isNaN(additionalCredits) || isNaN(targetGpa) ||
-            currentCredits < 0 || additionalCredits <= 0 || targetGpa < 0) {
-            planningGpaMessage.textContent = 'Please enter valid numbers for all fields. Current Credits must be >= 0, Additional Credits must be > 0.';
-            planningGpaMessage.classList.remove('hidden');
-            return;
-        }
-
-        // Formula: Required GPA = (Target Total Points - Current Total Points) / Additional Credits
-        // Target Total Points = Target GPA * (Current Credits + Additional Credits)
-        // Current Total Points = Current GPA * Current Credits
-        const targetTotalPoints = targetGpa * (currentCredits + additionalCredits);
-        const currentTotalPoints = currentGpa * currentCredits;
-        
-        const requiredGpaPoints = (targetTotalPoints - currentTotalPoints);
-
-        if (additionalCredits === 0 && requiredGpaPoints > 0) {
-            planningGpaMessage.textContent = 'Cannot reach target GPA with 0 additional credits if current GPA is lower.';
-            planningGpaMessage.classList.remove('hidden');
-            return;
-        } else if (additionalCredits === 0 && requiredGpaPoints <= 0) {
-            requiredGpaDisplay.textContent = 'N/A (already at/above target or 0 additional credits)';
-            planningGpaResultDiv.classList.remove('hidden');
-            return;
-        }
-
-
-        const requiredGpa = requiredGpaPoints / additionalCredits;
-
-        if (requiredGpa < 0) {
-            requiredGpaDisplay.textContent = `0.00 (You'll easily reach your target even with Fs!)`;
-            planningGpaResultDiv.classList.remove('hidden');
-        } else if (requiredGpa > 4.3) { // Assuming 4.3 is the max possible GPA
-            requiredGpaDisplay.textContent = `${requiredGpa.toFixed(2)} (Impossible to achieve)`;
-            planningGpaResultDiv.classList.remove('hidden');
-            planningGpaMessage.textContent = 'It appears impossible to reach your target GPA with the given credits.';
-            planningGpaMessage.classList.remove('hidden');
+    // Custom Alert/Confirm Modals (replacing browser's alert/confirm)
+    function showCustomAlert(message) {
+        const modalId = 'custom-alert-modal';
+        let modal = document.getElementById(modalId);
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = modalId;
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 hidden';
+            modal.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6 relative">
+                    <p class="text-gray-900 dark:text-gray-100 text-center mb-6">${message}</p>
+                    <button class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors duration-200" onclick="document.getElementById('${modalId}').classList.add('hidden');">
+                        OK
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
         } else {
-            requiredGpaDisplay.textContent = requiredGpa.toFixed(2);
-            planningGpaResultDiv.classList.remove('hidden');
+            modal.querySelector('p').textContent = message;
         }
-    });
+        modal.classList.remove('hidden');
+    }
 
-    // Initial render of GPA calculator when the page loads (in case grade-tracker-page is shown by default)
-    // This is also called when navigating to the grade tracker page via displayPage function
-    renderGPACalculator(); 
+    function showCustomConfirm(message, onConfirm) {
+        const modalId = 'custom-confirm-modal';
+        let modal = document.getElementById(modalId);
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = modalId;
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 hidden';
+            modal.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6 relative">
+                    <p class="text-gray-900 dark:text-gray-100 text-center mb-6">${message}</p>
+                    <div class="flex justify-around space-x-4">
+                        <button id="confirm-yes" class="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors duration-200">Yes</button>
+                        <button id="confirm-no" class="flex-1 bg-gray-300 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors duration-200">No</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        } else {
+            modal.querySelector('p').textContent = message;
+        }
+        modal.classList.remove('hidden');
+
+        const confirmYes = document.getElementById('confirm-yes');
+        const confirmNo = document.getElementById('confirm-no');
+
+        // Clear previous listeners
+        const newConfirmYes = confirmYes.cloneNode(true);
+        const newConfirmNo = confirmNo.cloneNode(true);
+        confirmYes.parentNode.replaceChild(newConfirmYes, confirmYes);
+        confirmNo.parentNode.replaceChild(newConfirmNo, confirmNo);
+
+        newConfirmYes.addEventListener('click', () => {
+            modal.classList.add('hidden');
+            onConfirm();
+        });
+        newConfirmNo.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+    }
+
+
+    // Call updateDashboardGrades on dashboard page load and after grade changes
+    navDashboard.addEventListener('click', updateDashboardGrades);
+    navGradeTracker.addEventListener('click', loadGrades); // Ensure grades are loaded when Grade Tracker is viewed
+
+    // Initial calls if user is already authenticated on page load
+    // This block handles the state when the page first loads.
+    // The onAuthStateChanged listener will also handle this, but this ensures
+    // the initial UI state is set up quickly.
+    if (auth && auth.currentUser) {
+        loadingFirebase.classList.add('hidden');
+        landingPage.classList.add('hidden');
+        mainAppLayout.classList.remove('hidden');
+        const userId = auth.currentUser.uid || crypto.randomUUID();
+        userIdDisplay.textContent = `User ID: ${userId}`;
+        displayPage('dashboard-page'); // Start on dashboard
+        await loadGrades(); // Load grades for grade tracker if user is on this page initially
+        await updateDashboardGrades(); // Update dashboard on initial load
+    } else if (auth && !auth.currentUser) {
+        loadingFirebase.classList.add('hidden');
+        landingPage.classList.remove('hidden');
+    }
 });
