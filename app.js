@@ -1,5 +1,14 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { 
+    getAuth, 
+    signInAnonymously, 
+    onAuthStateChanged, 
+    signOut,
+    createUserWithEmailAndPassword, // Added for sign-up
+    signInWithEmailAndPassword,     // Added for login
+    GoogleAuthProvider,             // Added for Google Sign-in
+    signInWithPopup                 // Added for Google Sign-in
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, doc, addDoc, onSnapshot, query, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Global variables for Firebase instances and user data
@@ -21,7 +30,7 @@ const firebaseConfig = {
     measurementId: "G-JRLCDXSSLT"
 };
 
-// Utility function to show messages
+// Utility function to show messages (for grade tracker)
 function showMessage(message, type) {
     const messageDiv = document.getElementById('grade-message');
     messageDiv.textContent = message;
@@ -32,57 +41,82 @@ function showMessage(message, type) {
     }, 5000); // Hide after 5 seconds
 }
 
-// Function to show custom modal
+// Function to show custom modal (general purpose, e.g., for feature coming soon)
 function showCustomModal(title, message) {
     const modal = document.createElement('div');
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
     modal.innerHTML = `
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl text-center max-w-sm mx-auto">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl text-center max-w-sm mx-auto relative">
             <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">${title}</h3>
             <p class="text-gray-700 dark:text-gray-300 mb-6">${message}</p>
             <button onclick="this.closest('.fixed').remove()" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Got It!</button>
+            <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" onclick="this.closest('.fixed').remove()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
         </div>
     `;
     document.body.appendChild(modal);
+}
+
+// Function to show authentication error messages
+function showAuthError(elementId, message) {
+    const errorElement = document.getElementById(elementId);
+    errorElement.textContent = message;
+    errorElement.classList.remove('hidden');
+}
+
+// Function to hide authentication error messages
+function hideAuthError(elementId) {
+    document.getElementById(elementId).classList.add('hidden');
+}
+
+// Function to toggle visibility of modals
+function toggleModal(modalId, show) {
+    document.getElementById(modalId).classList.toggle('hidden', !show);
 }
 
 // Function to switch between landing page and main app layout
 function showPage(pageId) {
     const landingPage = document.getElementById('landing-page');
     const mainAppLayout = document.getElementById('main-app-layout');
-    const appMainContentArea = document.getElementById('app-main-content-area'); // Reference to the main content area inside mainAppLayout
+    const appMainContentArea = document.getElementById('app-main-content-area');
 
     // Hide all top-level containers first
-    landingPage.classList.remove('active');
-    landingPage.classList.add('hidden'); // Ensure it's display: none
-    mainAppLayout.classList.remove('active');
-    mainAppLayout.classList.add('hidden'); // Ensure it's display: none
+    landingPage.classList.add('hidden');
+    mainAppLayout.classList.add('hidden');
+    document.getElementById('login-modal').classList.add('hidden');
+    document.getElementById('signup-modal').classList.add('hidden');
 
     if (pageId === 'landing-page') {
-        landingPage.classList.add('active');
         landingPage.classList.remove('hidden');
-    } else {
-        mainAppLayout.classList.add('active');
-        mainAppLayout.classList.remove('hidden');
-
-        // Hide all specific content pages within the main app layout
-        appMainContentArea.querySelectorAll('.page-content').forEach(page => {
-            page.classList.remove('active');
-        });
-        // Show the requested specific content page
-        document.getElementById(pageId).classList.add('active');
+    } else if (pageId === 'login-modal') {
+        toggleModal('login-modal', true);
+    } else if (pageId === 'signup-modal') {
+        toggleModal('signup-modal', true);
     }
+    else {
+        // If trying to go to an app page, ensure user is authenticated
+        if (auth.currentUser) {
+            mainAppLayout.classList.remove('hidden');
+            appMainContentArea.querySelectorAll('.page-content').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
 
-    // Update active state for navigation buttons (only for main app pages)
-    document.querySelectorAll('.nav-item').forEach(btn => {
-        btn.classList.remove('bg-indigo-100', 'dark:bg-indigo-700', 'text-indigo-700', 'dark:text-indigo-100');
-        btn.classList.add('text-gray-600', 'dark:text-gray-300', 'hover:bg-gray-100', 'dark:hover:bg-gray-700');
-    });
-    if (pageId !== 'landing-page') {
-        const activeNavButton = document.getElementById(`nav-${pageId.replace('-page', '')}`);
-        if (activeNavButton) {
-            activeNavButton.classList.add('bg-indigo-100', 'dark:bg-indigo-700', 'text-indigo-700', 'dark:text-indigo-100');
-            activeNavButton.classList.remove('text-gray-600', 'dark:text-gray-300', 'hover:bg-gray-100', 'dark:hover:bg-gray-700');
+            // Update active state for navigation buttons
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.classList.remove('bg-indigo-100', 'dark:bg-indigo-700', 'text-indigo-700', 'dark:text-indigo-100');
+                btn.classList.add('text-gray-600', 'dark:text-gray-300', 'hover:bg-gray-100', 'dark:hover:bg-gray-700');
+            });
+            const activeNavButton = document.getElementById(`nav-${pageId.replace('-page', '')}`);
+            if (activeNavButton) {
+                activeNavButton.classList.add('bg-indigo-100', 'dark:bg-indigo-700', 'text-indigo-700', 'dark:text-indigo-100');
+                activeNavButton.classList.remove('text-gray-600', 'dark:text-gray-300', 'hover:bg-gray-100', 'dark:hover:bg-gray-700');
+            }
+        } else {
+            // If not authenticated, redirect to landing page
+            showPage('landing-page');
+            showCustomModal("Access Denied", "Please log in or sign up to access the student planner features.");
         }
     }
 }
@@ -94,40 +128,103 @@ async function initializeFirebase() {
         db = getFirestore(app);
         auth = getAuth(app);
 
-        // Check if the user has previously "started" the app
-        const appStarted = localStorage.getItem('appStarted');
-
-        // For GitHub Pages, we'll use anonymous sign-in by default
-        // If you implement email/password or other auth, you'd replace this.
-        await signInAnonymously(auth);
-
         onAuthStateChanged(auth, (user) => {
+            document.getElementById('loading-firebase').classList.add('hidden'); // Hide loading spinner
+
             if (user) {
                 currentUserId = user.uid;
                 document.getElementById('user-id-display').innerHTML = `User ID: <span class="font-mono break-all">${currentUserId}</span>`;
                 setupFirestoreListeners();
+                // If user is logged in, and localStorage indicates they started the app, go to dashboard
+                if (localStorage.getItem('appStarted') === 'true') {
+                    showPage('dashboard-page');
+                } else {
+                    showPage('landing-page'); // Otherwise, show landing page
+                }
             } else {
-                // If for some reason anonymous sign-in fails or user is null, generate a random ID
-                currentUserId = crypto.randomUUID();
-                document.getElementById('user-id-display').innerHTML = `User ID: <span class="font-mono break-all">${currentUserId}</span>`;
-                setupFirestoreListeners();
-            }
-            document.getElementById('loading-firebase').classList.add('hidden'); // Hide loading spinner
-
-            // Decide which page to show initially
-            if (appStarted === 'true') {
-                showPage('dashboard-page');
-                // Ensure dashboard nav item is active if we directly land there
-                document.getElementById('nav-dashboard').classList.add('bg-indigo-100', 'dark:bg-indigo-700', 'text-indigo-700', 'dark:text-indigo-100');
-                document.getElementById('nav-dashboard').classList.remove('text-gray-600', 'dark:text-gray-300', 'hover:bg-gray-100', 'dark:hover:bg-gray-700');
-            } else {
+                // User is signed out or no user is logged in
+                currentUserId = null; // Clear userId
+                document.getElementById('user-id-display').innerHTML = ''; // Clear display
+                // Always show landing page if no user is logged in
                 showPage('landing-page');
+                // Also clear appStarted flag if user logs out
+                localStorage.removeItem('appStarted');
             }
         });
     } catch (error) {
         console.error("Error initializing Firebase:", error);
         document.getElementById('loading-firebase').classList.add('hidden');
         showCustomModal("Application Error", `Failed to load the application. Please try refreshing the page. Error: ${error.message}`);
+    }
+}
+
+// --- Authentication Functions ---
+async function handleSignUp(event) {
+    event.preventDefault();
+    hideAuthError('signup-error-message');
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+
+    try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        // User is automatically signed in after creation
+        localStorage.setItem('appStarted', 'true');
+        showPage('dashboard-page');
+    } catch (error) {
+        let errorMessage = "Failed to sign up.";
+        if (error.code === 'auth/email-already-in-use') {
+            errorMessage = "This email is already in use.";
+        } else if (error.code === 'auth/weak-password') {
+            errorMessage = "Password should be at least 6 characters.";
+        } else if (error.code === 'auth/invalid-email') {
+            errorMessage = "Invalid email address.";
+        }
+        showAuthError('signup-error-message', errorMessage);
+        console.error("Sign up error:", error);
+    }
+}
+
+async function handleLogin(event) {
+    event.preventDefault();
+    hideAuthError('login-error-message');
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+        localStorage.setItem('appStarted', 'true');
+        showPage('dashboard-page');
+    } catch (error) {
+        let errorMessage = "Failed to log in.";
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+            errorMessage = "Invalid email or password.";
+        } else if (error.code === 'auth/invalid-email') {
+            errorMessage = "Invalid email address.";
+        }
+        showAuthError('login-error-message', errorMessage);
+        console.error("Login error:", error);
+    }
+}
+
+async function handleGoogleSignIn(event) {
+    event.preventDefault();
+    hideAuthError('login-error-message'); // Clear login errors
+    hideAuthError('signup-error-message'); // Clear signup errors
+
+    const provider = new GoogleAuthProvider();
+    try {
+        await signInWithPopup(auth, provider);
+        localStorage.setItem('appStarted', 'true');
+        showPage('dashboard-page');
+    } catch (error) {
+        let errorMessage = "Failed to sign in with Google.";
+        if (error.code === 'auth/popup-closed-by-user') {
+            errorMessage = "Google sign-in popup was closed.";
+        } else if (error.code === 'auth/cancelled-popup-request') {
+            errorMessage = "Google sign-in was cancelled.";
+        }
+        showAuthError('login-error-message', errorMessage); // Display error on login modal
+        console.error("Google sign-in error:", error);
     }
 }
 
@@ -255,9 +352,7 @@ async function generateSchedule() {
         const chatHistory = [];
         chatHistory.push({ role: "user", parts: [{ text: `Generate a detailed high school student schedule based on the following needs: ${prompt}. Include typical school hours, study time, breaks, and potential extracurriculars. Be realistic and provide a daily breakdown.` }] });
         const payload = { contents: chatHistory };
-        // For security, the API key for Gemini is still hardcoded for this client-side app.
-        // For production, consider a server-side proxy or a build step to inject it.
-        const apiKey = firebaseConfig.apiKey; 
+        const apiKey = firebaseConfig.apiKey;
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
         const response = await fetch(apiUrl, {
@@ -359,14 +454,14 @@ function renderGrades() {
 async function addGrade(event) {
     event.preventDefault();
     if (!db || !currentUserId) {
-        showMessage("Firebase not initialized. Please try again.", "error");
+        showMessage("Firebase not initialized or user not logged in. Please log in to add grades.", "error");
         return;
     }
 
     const course = document.getElementById('grade-course').value.trim();
     const assignment = document.getElementById('grade-assignment').value.trim();
     const score = document.getElementById('grade-score').value.trim();
-    const weight = document.getElementById('grade-weight').value.trim(); // Get weight
+    const weight = document.getElementById('grade-weight').value.trim();
     const date = document.getElementById('grade-date').value.trim();
 
     if (!course || !assignment || !score || !weight || !date) {
@@ -384,20 +479,19 @@ async function addGrade(event) {
 
 
     try {
-        // Firestore collection path for grades (using user-specific data)
         const gradesCollectionRef = collection(db, `users/${currentUserId}/grades`);
         await addDoc(gradesCollectionRef, {
             course: course,
             assignment: assignment,
             score: parseFloat(score),
-            weight: parseFloat(weight), // Save weight as a number
+            weight: parseFloat(weight),
             date: date,
             timestamp: new Date().toISOString()
         });
         showMessage("Grade added successfully!", "success");
-        document.getElementById('add-grade-form').reset(); // Reset form
-        document.getElementById('grade-date').value = new Date().toISOString().split('T')[0]; // Set default date again
-        document.getElementById('grade-weight').value = "1"; // Reset weight to default
+        document.getElementById('add-grade-form').reset();
+        document.getElementById('grade-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('grade-weight').value = "1";
     } catch (error) {
         console.error("Error adding grade:", error);
         showMessage("Failed to add grade.", "error");
@@ -406,11 +500,10 @@ async function addGrade(event) {
 
 async function deleteGrade(gradeId) {
     if (!db || !currentUserId) {
-        showMessage("Firebase not initialized. Please try again.", "error");
+        showMessage("Firebase not initialized or user not logged in. Please log in to delete grades.", "error");
         return;
     }
     try {
-        // Firestore document path for deleting a grade
         const gradeDocRef = doc(db, `users/${currentUserId}/grades`, gradeId);
         await deleteDoc(gradeDocRef);
         showMessage("Grade deleted successfully!", "success");
@@ -429,22 +522,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Landing page button listeners
     document.getElementById('landing-get-started-btn').addEventListener('click', () => {
-        localStorage.setItem('appStarted', 'true'); // Set flag
-        showPage('dashboard-page');
+        // If already logged in, go to dashboard. Otherwise, prompt login/signup.
+        if (auth.currentUser) {
+            localStorage.setItem('appStarted', 'true');
+            showPage('dashboard-page');
+        } else {
+            showPage('login-modal'); // Or signup-modal, depending on preference
+        }
     });
     document.getElementById('landing-see-features-btn').addEventListener('click', () => {
         const featuresSection = document.getElementById('features-section');
-        featuresSection.classList.add('opacity-100', 'translate-y-0'); // Trigger fade-in animation
+        featuresSection.classList.add('opacity-100', 'translate-y-0');
         featuresSection.scrollIntoView({ behavior: 'smooth' });
     });
 
-    // Login/Signup button listeners (placeholders)
-    document.getElementById('landing-login-btn').addEventListener('click', () => {
-        showCustomModal("Login Feature", "Login functionality is coming soon!");
+    // Login/Signup button listeners on landing page
+    document.getElementById('landing-login-btn').addEventListener('click', () => showPage('login-modal'));
+    document.getElementById('landing-signup-btn').addEventListener('click', () => showPage('signup-modal'));
+
+    // Modal close buttons
+    document.getElementById('close-login-modal').addEventListener('click', () => toggleModal('login-modal', false));
+    document.getElementById('close-signup-modal').addEventListener('click', () => toggleModal('signup-modal', false));
+
+    // Switch between login and signup forms
+    document.getElementById('switch-to-signup').addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleModal('login-modal', false);
+        toggleModal('signup-modal', true);
+        hideAuthError('login-error-message'); // Clear errors when switching
     });
-    document.getElementById('landing-signup-btn').addEventListener('click', () => {
-        showCustomModal("Sign Up Feature", "Sign up functionality is coming soon!");
+    document.getElementById('switch-to-login').addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleModal('signup-modal', false);
+        toggleModal('login-modal', true);
+        hideAuthError('signup-error-message'); // Clear errors when switching
     });
+
+    // Authentication form submissions
+    document.getElementById('login-form').addEventListener('submit', handleLogin);
+    document.getElementById('signup-form').addEventListener('submit', handleSignUp);
+    document.getElementById('login-google-btn').addEventListener('click', handleGoogleSignIn);
+    document.getElementById('signup-google-btn').addEventListener('click', handleGoogleSignIn);
+
 
     // Navigation button event listeners (for main app)
     document.getElementById('nav-dashboard').addEventListener('click', () => showPage('dashboard-page'));
@@ -455,21 +574,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // "Student Planner" title in sidebar listener
     document.getElementById('sidebar-app-title').addEventListener('click', () => {
-        localStorage.removeItem('appStarted'); // Clear the flag
-        showPage('landing-page'); // Redirect to landing page
-        // Reset active nav item for dashboard if it was active
+        localStorage.removeItem('appStarted');
+        showPage('landing-page');
         document.getElementById('nav-dashboard').classList.remove('bg-indigo-100', 'dark:bg-indigo-700', 'text-indigo-700', 'dark:text-indigo-100');
         document.getElementById('nav-dashboard').classList.add('text-gray-600', 'dark:text-gray-300', 'hover:bg-gray-100', 'dark:hover:bg-gray-700');
     });
 
-
     // Logout button listener
     document.getElementById('logout-btn').addEventListener('click', async () => {
         try {
-            await signOut(auth); // Sign out from Firebase
-            localStorage.removeItem('appStarted'); // Clear the flag
-            showPage('landing-page'); // Redirect to landing page
-            // Reset active nav item for dashboard if it was active
+            await signOut(auth);
+            localStorage.removeItem('appStarted');
+            showPage('landing-page');
             document.getElementById('nav-dashboard').classList.remove('bg-indigo-100', 'dark:bg-indigo-700', 'text-indigo-700', 'dark:text-indigo-100');
             document.getElementById('nav-dashboard').classList.add('text-gray-600', 'dark:text-gray-300', 'hover:bg-gray-100', 'dark:hover:bg-gray-700');
         } catch (error) {
