@@ -118,9 +118,12 @@ def handle_generate_response():
 # 4.  Run the Flask Application
 # ───────────────────────────────────────────────
 if __name__ == '__main__':
-    # For development, run on localhost:5000.
+    # Determine if running in debug mode based on FLASK_ENV environment variable
     # In a production environment, you would use a WSGI server like Gunicorn or uWSGI.
-    print("Starting Flask server on http://127.0.0.1:5000")
+    # For local development, run on localhost:5000.
+    is_debug_mode = os.getenv('FLASK_ENV') == 'development'
+    
+    print(f"Starting Flask server on http://127.0.0.1:5000 (Debug Mode: {is_debug_mode})")
     print("Ensure your OPENAI_API_KEY environment variable is set.")
-    app.run(debug=True, port=5000)
+    app.run(debug=is_debug_mode, port=5000)
 
