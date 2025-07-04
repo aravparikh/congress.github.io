@@ -6,7 +6,15 @@ import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, 
 // Firestore imports are commented out as they are not directly used in this AI chat example,
 // but included for completeness if you expand the app.
 // import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
+const firebaseConfig = {
+  apiKey: "AIzaSyBMDzrZurHNHR_5QMIGzCOisVoAxOJ0d08",
+  authDomain: "congressional-app-challe-eb3be.firebaseapp.com",
+  projectId: "congressional-app-challe-eb3be",
+  storageBucket: "congressional-app-challe-eb3be.firebasestorage.app",
+  messagingSenderId: "182459835746",
+  appId: "1:182459835746:web:8ae5e7a988dc88bb7e383b",
+  measurementId: "G-JRLCDXSSLT"
+};
 // Global Firebase variables (provided by the Canvas environment)
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
