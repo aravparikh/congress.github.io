@@ -370,7 +370,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         aiChatInput.value = ''; // Clear input
 
         try {
-            const response = await fetch('http://localhost:5000/generate', { // Ensure this URL matches your Flask backend
+            const response = await fetch('https://student-planner-backend.onrender.com/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
