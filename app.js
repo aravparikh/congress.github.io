@@ -4,7 +4,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 // Import Firestore modules
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, doc, deleteDoc, updateDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // YOUR FIREBASE CONFIGURATION - REPLACE WITH YOUR ACTUAL VALUES FROM FIREBASE CONSOLE
 const firebaseConfig = {
@@ -28,6 +28,7 @@ let db; // This will now hold your Firestore instance
 
 // GPA Calculator Data and Settings
 // Note: userCourses will now be loaded from Firestore dynamically
+// This is the default map, which can be overridden by user settings from Firestore
 let gradePointMap = {
     'A+': 4.3,
     'A': 4.0,
@@ -121,7 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
     // Function to display a specific page
-    const displayPage = (pageId) => {
+    const displayPage = async (pageId) => { // Made async to await settings/grades load
         document.querySelectorAll('.page-content').forEach(page => {
             page.classList.remove('active');
         });
@@ -129,9 +130,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Special handling for Grade Tracker page
         if (pageId === 'grade-tracker-page') {
-            loadGrades(); // Load and render the GPA calculator when navigating to this page
+            await loadGradePointSettings(); // Load settings first
+            await loadGrades(); // Then load and render the GPA calculator
         } else if (pageId === 'dashboard-page') {
-            updateDashboardGrades(); // Update dashboard when navigating to it
+            await updateDashboardGrades(); // Update dashboard when navigating to it
         }
 
         // Update active navigation item styling
@@ -167,10 +169,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             mainAppLayout.classList.remove('hidden');
             const userId = user.uid || crypto.randomUUID(); // Fallback for anonymous
             userIdDisplay.textContent = `User ID: ${userId}`;
-            displayPage('dashboard-page'); // Show dashboard by default after login
             // Initial data loads after successful authentication
+            await loadGradePointSettings(); // Load settings first
             await loadGrades(); // Load grades for Grade Tracker
             await updateDashboardGrades(); // Update dashboard
+            displayPage('dashboard-page'); // Show dashboard by default after login
         } else {
             // User is signed out
             console.log("Firebase Auth State Changed: User signed out.");
@@ -416,6 +419,56 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- GPA Calculator Functions (Now uses Firestore) ---
 
+    // Function to load grade point settings from Firestore
+    async function loadGradePointSettings() {
+        const userId = auth.currentUser ? auth.currentUser.uid : null;
+        if (!userId) {
+            gradePointSettingsLoading.classList.add('hidden');
+            renderGradePointSettings(); // Render defaults if not logged in
+            return;
+        }
+
+        gradePointSettingsLoading.classList.remove('hidden');
+        try {
+            const settingsDocRef = doc(db, `users/${userId}/settings/gpaSettings`);
+            const docSnap = await getDoc(settingsDocRef);
+
+            if (docSnap.exists()) {
+                // Merge fetched settings with default, prioritizing fetched
+                Object.assign(gradePointMap, docSnap.data());
+                console.log("Loaded custom GPA settings:", gradePointMap);
+            } else {
+                // If no settings exist, save the default map for the user
+                await setDoc(settingsDocRef, gradePointMap);
+                console.log("Saved default GPA settings for new user.");
+            }
+        } catch (e) {
+            console.error("Error loading or saving GPA settings:", e);
+            // Fallback to default gradePointMap if there's an error
+            showCustomAlert("Error loading GPA settings. Using default values.");
+        } finally {
+            gradePointSettingsLoading.classList.add('hidden');
+            renderGradePointSettings(); // Always render settings after loading (or failing to load)
+        }
+    }
+
+    // Function to save grade point settings to Firestore
+    async function saveGradePointSettings(newSettings) {
+        const userId = auth.currentUser ? auth.currentUser.uid : null;
+        if (!userId) {
+            console.warn("Not logged in, cannot save GPA settings.");
+            return;
+        }
+        try {
+            const settingsDocRef = doc(db, `users/${userId}/settings/gpaSettings`);
+            await setDoc(settingsDocRef, newSettings);
+            console.log("GPA settings saved successfully!");
+        } catch (e) {
+            console.error("Error saving GPA settings:", e);
+            showCustomAlert("Error saving GPA settings. Please try again.");
+        }
+    }
+
     // Renders the grade point settings inputs
     const renderGradePointSettings = () => {
         gradePointSettingsContainer.innerHTML = ''; // Clear previous settings
@@ -438,8 +491,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const newPoints = parseFloat(e.target.value);
                     if (!isNaN(newPoints) && newPoints >= 0 && newPoints <= 4.3) {
                         gradePointMap[grade] = newPoints;
-                        // No need to reload grades from Firestore, just re-render current data
-                        // If you want to persist these settings, you'd save them to Firestore too.
+                        saveGradePointSettings(gradePointMap); // Save changes to Firestore
                         loadGrades(); // Recalculate and re-render GPA based on new map
                     }
                 });
@@ -537,7 +589,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             gpaTotalCreditsDisplay.textContent = totalCredits;
             gpaDisplay.textContent = gpa;
 
-            renderGradePointSettings(); // Always render settings when GPA is rendered/updated
+            // renderGradePointSettings is now called by loadGradePointSettings
+            // to ensure gradePointMap is up-to-date before rendering settings.
 
         } catch (e) {
             console.error("Error loading grades: ", e);
@@ -622,6 +675,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         let allCourses = [];
         try {
+            // Ensure gradePointMap is loaded before calculating GPA for dashboard
+            await loadGradePointSettings();
+
             const gradesCollectionRef = collection(db, `users/${userId}/grades`);
             // Get all courses to calculate overall GPA
             const allCoursesQuerySnapshot = await getDocs(gradesCollectionRef);
@@ -802,6 +858,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     deletePromises.push(deleteDoc(doc.ref));
                 });
 
+                // Also delete the GPA settings document
+                const gpaSettingsDocRef = doc(db, `users/${userId}/settings/gpaSettings`);
+                deletePromises.push(deleteDoc(gpaSettingsDocRef));
+
                 await Promise.all(deletePromises); // Execute all deletions concurrently
 
                 // Optionally, if you also want to delete the user's authentication account:
@@ -831,10 +891,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         mainAppLayout.classList.remove('hidden');
         const userId = auth.currentUser.uid || crypto.randomUUID();
         userIdDisplay.textContent = `User ID: ${userId}`;
-        displayPage('dashboard-page'); // Start on dashboard
         // Await these initial loads to ensure data is present before user interacts
+        await loadGradePointSettings(); // Load settings first
         await loadGrades(); // Load grades for grade tracker if user is on this page initially
         await updateDashboardGrades(); // Update dashboard on initial load
+        displayPage('dashboard-page'); // Start on dashboard
     } else if (auth && !auth.currentUser) {
         loadingFirebase.classList.add('hidden');
         landingPage.classList.remove('hidden');
