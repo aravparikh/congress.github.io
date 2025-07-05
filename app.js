@@ -303,21 +303,9 @@ function displayGrades(grades) {
     document.querySelectorAll('.delete-grade-btn').forEach(button => {
         button.addEventListener('click', async (e) => {
             const gradeId = e.currentTarget.dataset.id;
-            // Show custom confirmation modal instead of confirm()
-            const confirmDeleteModal = document.getElementById('confirm-delete-modal');
-            const confirmDeleteMessage = document.getElementById('confirm-delete-message');
-            confirmDeleteMessage.textContent = "Are you sure you want to delete this grade?";
-            confirmDeleteModal.classList.remove('hidden');
-
-            document.getElementById('confirm-delete-yes').onclick = async () => {
-                confirmDeleteModal.classList.add('hidden');
+            if (confirm("Are you sure you want to delete this grade?")) { // Using confirm for simplicity, replace with custom modal in production
                 await deleteGrade(gradeId);
-            };
-
-            document.getElementById('confirm-delete-no').onclick = () => {
-                confirmDeleteModal.classList.add('hidden');
-                showCustomAlert("Grade deletion cancelled.", 'info');
-            };
+            }
         });
     });
 }
@@ -583,8 +571,6 @@ deleteUserDataBtn.addEventListener('click', async () => {
 
     // Custom confirmation dialog
     const confirmDeleteModal = document.getElementById('confirm-delete-modal');
-    const confirmDeleteMessage = document.getElementById('confirm-delete-message');
-    confirmDeleteMessage.textContent = "Are you sure you want to delete all your data? This action cannot be undone.";
     confirmDeleteModal.classList.remove('hidden');
 
     document.getElementById('confirm-delete-yes').onclick = async () => {
