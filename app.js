@@ -11,7 +11,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyBMDzrZurHNHR_5QMIGzCOisVoAxOJ0d08",
   authDomain: "congressional-app-challe-eb3be.firebaseapp.com",
   projectId: "congressional-app-challe-eb3be",
-  storageBucket: "congressional-app-challe-eb3be.firebasestorage.app",
+  storageBucket: "congressional-app-challe-eb3be.firebase.app.com",
   messagingSenderId: "182459835746",
   appId: "1:182459835746:web:8ae5e7a988dc88bb7e383b",
   measurementId: "G-JRLCDXSSLT"
@@ -221,13 +221,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     landingLoginBtn.addEventListener('click', () => loginModal.classList.remove('hidden'));
     landingSignupBtn.addEventListener('click', () => signupModal.classList.remove('hidden'));
     document.getElementById('landing-get-started-btn').addEventListener('click', () => signupModal.classList.remove('hidden'));
-    document.getElementById('landing-see-features-btn').addEventListener('click', () => {
-        // Scroll to features section
-        document.getElementById('features-section').scrollIntoView({ behavior: 'smooth' });
-        // Make features section visible (it's initially hidden by opacity/transform)
-        document.getElementById('features-section').style.opacity = '1';
-        document.getElementById('features-section').style.transform = 'translateY(0)';
-    });
+    // Removed the event listener for landing-see-features-btn as the section will be visible by default
+
 
     // --- Modal Switchers and Closers ---
     closeLoginModalBtn.addEventListener('click', () => loginModal.classList.add('hidden'));
