@@ -91,8 +91,17 @@ def generate_response(user_text: str, max_tokens: int = 512) -> str:
         return "[ERROR] An internal server error occurred."
 
 # ───────────────────────────────────────────────
-# 3.  Flask API Endpoint
+# 3.  Flask API Endpoints
 # ───────────────────────────────────────────────
+
+# New root route for health check
+@app.route('/', methods=['GET'])
+def home():
+    """
+    A simple root endpoint to confirm the backend is running.
+    """
+    return jsonify({"message": "Student Planner Backend is running!"}), 200
+
 @app.route('/generate', methods=['POST'])
 def handle_generate_response():
     """
@@ -128,4 +137,3 @@ if __name__ == '__main__':
     print(f"Starting Flask server on http://127.0.0.1:5000 (Debug Mode: {is_debug_mode})")
     print("Ensure your OPENAI_API_KEY environment variable is set.")
     app.run(debug=is_debug_mode, port=5000)
-
