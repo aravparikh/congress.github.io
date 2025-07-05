@@ -19,605 +19,812 @@ const firebaseConfig = {
 
 
 // Global variables (derived from firebaseConfig or set to null/defaults)
-const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.appId;
-const firebaseConfigParsed = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
-let db; // Firestore instance
-let auth; // Auth instance
-let userId = null; // Current user ID
+const appId = firebaseConfig.appId;
+const initialAuthToken = null; // Set to null as it's not provided by your environment anymore
 
-// Initialize Firebase
 let app;
-try {
-    app = initializeApp(firebaseConfigParsed);
-    db = getFirestore(app);
-    auth = getAuth(app);
-    console.log("Firebase initialized successfully.");
-} catch (error) {
-    console.error("Error initializing Firebase:", error);
-    // Display a user-friendly error message if Firebase fails to initialize
-    document.getElementById('loading-firebase').innerHTML = `
-        <div class="text-red-500 text-center p-4">
-            <p class="font-bold">Error loading application.</p>
-            <p>Please check your internet connection or try again later.</p>
-            <p class="text-sm mt-2">Details: ${error.message}</p>
-        </div>
-    `;
-    // Prevent further execution if Firebase is not initialized
-    throw new Error("Firebase initialization failed.");
-}
+let auth;
+let db; // This will now hold your Firestore instance
 
+// GPA Calculator Data and Settings
+// Note: userCourses will now be loaded from Firestore dynamically
+let gradePointMap = {
+    'A+': 4.3,
+    'A': 4.0,
+    'A-': 3.7,
+    'B+': 3.3,
+    'B': 3.0,
+    'B-': 2.7,
+    'C+': 2.3,
+    'C': 2.0,
+    'C-': 1.7,
+    'D+': 1.3,
+    'D': 1.0,
+    'D-': 0.7,
+    'F': 0.0,
+    'P': null, // Pass - ignored for GPA
+    'NP': null, // Not Pass - ignored for GPA
+    'I': null, // Incomplete - ignored for GPA
+    'W': null  // Withdrawal - ignored for GPA
+};
 
-// Custom Alert/Modal Function
-function showCustomAlert(message, type = 'info') {
-    const alertModal = document.getElementById('custom-alert-modal');
-    const alertMessage = document.getElementById('custom-alert-message');
-    const alertHeader = document.getElementById('custom-alert-header');
-    const alertIcon = document.getElementById('custom-alert-icon');
-
-    alertMessage.textContent = message;
-
-    // Reset classes
-    alertHeader.className = 'flex items-center p-4 rounded-t-lg';
-    alertIcon.innerHTML = ''; // Clear previous icon
-
-    if (type === 'success') {
-        alertHeader.classList.add('bg-green-500', 'text-white');
-        alertIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
-    } else if (type === 'error') {
-        alertHeader.classList.add('bg-red-500', 'text-white');
-        alertIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2L8 8m4 4l-2 2m2-2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
-    } else { // info or default
-        alertHeader.classList.add('bg-blue-500', 'text-white');
-        alertIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
-    }
-
-    alertModal.classList.remove('hidden');
-    setTimeout(() => {
-        alertModal.classList.add('hidden');
-    }, 3000); // Auto-hide after 3 seconds
-}
-
-
-// DOM Elements
-const loadingFirebase = document.getElementById('loading-firebase');
-const landingPage = document.getElementById('landing-page');
-const mainAppLayout = document.getElementById('main-app-layout');
-const getStartedBtn = document.getElementById('get-started-btn');
-const logoutBtn = document.getElementById('logout-btn');
-const userIdDisplay = document.getElementById('user-id-display');
-
-// Navigation elements
-const navLinks = document.querySelectorAll('.nav-link');
-const pageContents = document.querySelectorAll('.page-content');
-
-// Grade Tracker elements
-const gradeForm = document.getElementById('grade-form');
-const courseNameInput = document.getElementById('course-name');
-const gradeInput = document.getElementById('grade');
-const weightInput = document.getElementById('weight');
-const gradesList = document.getElementById('grades-list');
-const gpaDisplay = document.getElementById('gpa-display');
-const overallGpaDisplay = document.getElementById('overall-gpa-display');
-
-// Dashboard elements
-const dashboardGradesSummary = document.getElementById('dashboard-grades-summary');
-const dashboardTimeManagementSummary = document.getElementById('dashboard-time-management-summary');
-
-// Time Management elements
-const aiChatOutput = document.getElementById('ai-chat-output');
-const aiChatInput = document.getElementById('ai-chat-input');
-const sendChatBtn = document.getElementById('send-chat-btn');
-const generateScheduleBtn = document.getElementById('generate-schedule-btn');
-
-// Settings elements
-const deleteUserDataBtn = document.getElementById('delete-user-data-btn');
-const deleteUserDataMessage = document.getElementById('delete-user-data-message');
-
-
-// Function to display specific page
-function displayPage(pageId) {
-    pageContents.forEach(page => {
-        page.classList.remove('active', 'animate-fade-in-down');
-    });
-    const activePage = document.getElementById(pageId);
-    if (activePage) {
-        activePage.classList.add('active', 'animate-fade-in-down');
-    }
-
-    // Update active nav link styling
-    navLinks.forEach(link => {
-        if (link.getAttribute('data-page') === pageId) {
-            link.classList.add('bg-indigo-700', 'text-white');
-            link.classList.remove('text-indigo-200', 'hover:bg-indigo-600');
-        } else {
-            link.classList.remove('bg-indigo-700', 'text-white');
-            link.classList.add('text-indigo-200', 'hover:bg-indigo-600');
-        }
-    });
-}
-
-// Function to handle authentication state changes
-onAuthStateChanged(auth, async (user) => {
-    loadingFirebase.classList.add('hidden'); // Hide loading spinner once auth state is known
-    if (user) {
-        // User is signed in
-        userId = user.uid;
-        landingPage.classList.add('hidden');
-        mainAppLayout.classList.remove('hidden');
-        userIdDisplay.textContent = `User ID: ${userId}`;
-        displayPage('dashboard-page'); // Default to dashboard on login
-        await loadGrades(); // Load grades for grade tracker
-        await updateDashboardGrades(); // Update dashboard summary
-    } else {
-        // User is signed out
-        userId = null;
-        mainAppLayout.classList.add('hidden');
-        landingPage.classList.remove('hidden');
-        userIdDisplay.textContent = 'User ID: N/A';
-        // Clear any displayed data if user logs out
-        gradesList.innerHTML = '';
-        gpaDisplay.textContent = '0.00';
-        overallGpaDisplay.textContent = '0.00';
-        aiChatOutput.innerHTML = '';
-        dashboardGradesSummary.innerHTML = '<p class="text-gray-600 dark:text-gray-400">No grades to display.</p>';
-        dashboardTimeManagementSummary.innerHTML = '<p class="text-gray-600 dark:text-gray-400">No schedule generated yet.</p>';
-    }
-});
-
-// Initial authentication check (for when the page first loads)
 document.addEventListener('DOMContentLoaded', async () => {
-    // Attempt to sign in anonymously if no user is authenticated
-    if (!auth.currentUser) {
-        try {
-            // Use the __initial_auth_token if available for custom auth, otherwise sign in anonymously
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-                console.log("Signed in with custom token.");
-            } else {
-                await signInAnonymously(auth);
-                console.log("Signed in anonymously.");
-            }
-        } catch (error) {
-            console.error("Error during initial sign-in:", error);
-            showCustomAlert(`Authentication failed: ${error.message}`, 'error');
-            loadingFirebase.classList.add('hidden');
-            landingPage.classList.remove('hidden');
+    const loadingFirebase = document.getElementById('loading-firebase');
+    const landingPage = document.getElementById('landing-page');
+    const mainAppLayout = document.getElementById('main-app-layout');
+    const userIdDisplay = document.getElementById('user-id-display');
+    const sidebarAppTitle = document.getElementById('sidebar-app-title'); // Get the sidebar title element
+
+    // Modals and their buttons
+    const loginModal = document.getElementById('login-modal');
+    const signupModal = document.getElementById('signup-modal');
+    const landingLoginBtn = document.getElementById('landing-login-btn');
+    const landingSignupBtn = document.getElementById('landing-signup-btn');
+    const closeLoginModalBtn = document.getElementById('close-login-modal');
+    const closeSignupModalBtn = document.getElementById('close-signup-modal');
+    const switchToSignupBtn = document.getElementById('switch-to-signup');
+    const switchToLoginBtn = document.getElementById('switch-to-login');
+    const loginGoogleBtn = document.getElementById('login-google-btn'); // New: Get Google login button
+    const signupGoogleBtn = document.getElementById('signup-google-btn'); // New: Get Google signup button
+
+
+    // Navigation buttons
+    const navDashboard = document.getElementById('nav-dashboard');
+    const navTimeManagement = document.getElementById('nav-time-management');
+    const navGradeTracker = document.getElementById('nav-grade-tracker');
+    const navExtracurriculars = document.getElementById('nav-extracurriculars');
+    const navCalendarSync = document.getElementById('nav-calendar-sync');
+    const navSettings = document.getElementById('nav-settings');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    // AI Chat elements
+    const aiChatInput = document.getElementById('ai-chat-input');
+    const sendAiChatBtn = document.getElementById('send-ai-chat-btn');
+    const aiChatOutput = document.getElementById('ai-chat-output');
+    const aiChatLoadingSpinner = document.getElementById('ai-chat-loading-spinner');
+    const aiChatError = document.getElementById('ai-chat-error');
+
+    // GPA Calculator elements
+    const newCourseNameInput = document.getElementById('new-course-name');
+    const newCourseCreditsInput = document.getElementById('new-course-credits');
+    const newCourseGradeSelect = document.getElementById('new-course-grade');
+    const addCourseBtn = document.getElementById('add-course-btn');
+    const addCourseMessage = document.getElementById('add-course-message');
+    const coursesListBody = document.getElementById('courses-list-body');
+    const noCoursesRow = document.getElementById('no-courses-row');
+    const gpaTotalCreditsDisplay = document.getElementById('gpa-total-credits');
+    const gpaDisplay = document.getElementById('gpa-display');
+    const gpaTableContainer = document.getElementById('gpa-table-container');
+    const gpaSummary = document.getElementById('gpa-summary');
+    const gradePointSettingsContainer = document.getElementById('grade-point-settings');
+    const gradePointSettingsLoading = document.getElementById('grade-point-settings-loading');
+
+    // GPA Planning Calculator elements
+    const currentGpaInput = document.getElementById('current-gpa');
+    const currentGpaCreditsInput = document.getElementById('current-gpa-credits');
+    const additionalCreditsInput = document.getElementById('additional-credits');
+    const targetGpaInput = document.getElementById('target-gpa');
+    const calculatePlanningGpaBtn = document.getElementById('calculate-planning-gpa-btn');
+    const planningGpaResultDiv = document.getElementById('planning-gpa-result');
+    const requiredGpaDisplay = document.getElementById('required-gpa-display');
+    const planningGpaMessage = document.getElementById('planning-gpa-message');
+
+    // Dashboard GPA and Recent Grades elements
+    const overallGpaDashboard = document.getElementById('overall-gpa');
+    const recentGradesListDashboard = document.getElementById('recent-grades-list');
+    const recentGradesLoadingDashboard = document.getElementById('recent-grades-loading');
+    const noRecentGradesDashboard = document.getElementById('no-recent-grades');
+
+    // Settings page elements
+    const deleteUserDataBtn = document.getElementById('delete-user-data-btn');
+    const deleteUserDataMessage = document.getElementById('delete-user-data-message');
+
+
+    // Function to display a specific page
+    const displayPage = (pageId) => {
+        document.querySelectorAll('.page-content').forEach(page => {
+            page.classList.remove('active');
+        });
+        document.getElementById(pageId).classList.add('active');
+
+        // Special handling for Grade Tracker page
+        if (pageId === 'grade-tracker-page') {
+            loadGrades(); // Load and render the GPA calculator when navigating to this page
+        } else if (pageId === 'dashboard-page') {
+            updateDashboardGrades(); // Update dashboard when navigating to it
         }
-    }
-});
 
+        // Update active navigation item styling
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('bg-indigo-100', 'dark:bg-indigo-700', 'text-indigo-600', 'dark:text-indigo-100');
+            item.classList.add('text-gray-600', 'dark:text-gray-300');
+        });
+        const activeNavItem = document.getElementById(`nav-${pageId.replace('-page', '')}`);
+        if (activeNavItem) {
+            activeNavItem.classList.add('bg-indigo-100', 'dark:bg-indigo-700', 'text-indigo-600', 'dark:text-indigo-100');
+            activeNavItem.classList.remove('text-gray-600', 'dark:text-gray-300');
+        }
+    };
 
-// Event Listeners
-
-// Get Started Button
-getStartedBtn.addEventListener('click', () => {
-    // The onAuthStateChanged listener will handle the UI update after anonymous sign-in
-    // No explicit action needed here beyond triggering the sign-in if not already
-    console.log("Get Started button clicked.");
-});
-
-// Logout Button
-logoutBtn.addEventListener('click', async () => {
+    // Initialize Firebase App and Firestore
     try {
-        await signOut(auth);
-        showCustomAlert("Logged out successfully!", 'success');
+        app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app); // Initialize Firestore here
     } catch (error) {
-        console.error("Error logging out:", error);
-        showCustomAlert(`Logout failed: ${error.message}`, 'error');
+        console.error("Firebase initialization error:", error);
+        loadingFirebase.innerHTML = `<div class="text-red-600 dark:text-red-400">Error initializing Firebase. Please check your configuration and ensure you are connected to the internet.</div>`;
+        return; // Stop execution if Firebase fails to initialize
     }
-});
 
-// Navigation Links
-navLinks.forEach(link => {
-    link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const pageId = link.getAttribute('data-page');
-        displayPage(pageId);
-        // Load data specific to the page if needed
-        if (pageId === 'grade-tracker-page' && userId) {
-            loadGrades();
-        } else if (pageId === 'dashboard-page' && userId) {
-            updateDashboardGrades();
+    // Firebase Auth State Listener
+    onAuthStateChanged(auth, async (user) => {
+        loadingFirebase.classList.add('hidden'); // Hide loading spinner once auth state is known
+        if (user) {
+            // User is signed in
+            console.log("Firebase Auth State Changed: User signed in", user.uid);
+            landingPage.classList.add('hidden');
+            mainAppLayout.classList.remove('hidden');
+            const userId = user.uid || crypto.randomUUID(); // Fallback for anonymous
+            userIdDisplay.textContent = `User ID: ${userId}`;
+            displayPage('dashboard-page'); // Show dashboard by default after login
+            // Initial data loads after successful authentication
+            await loadGrades(); // Load grades for Grade Tracker
+            await updateDashboardGrades(); // Update dashboard
+        } else {
+            // User is signed out
+            console.log("Firebase Auth State Changed: User signed out.");
+            landingPage.classList.remove('hidden');
+            mainAppLayout.classList.add('hidden');
+            loginModal.classList.add('hidden');
+            signupModal.classList.add('hidden');
+            // Clear any displayed user data if signed out
+            overallGpaDashboard.textContent = 'N/A';
+            recentGradesListDashboard.innerHTML = '';
+            noRecentGradesDashboard.classList.remove('hidden');
+            coursesListBody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 whitespace-nowrap text-center text-gray-500 dark:text-gray-400">Please log in to view your courses.</td></tr>`;
+            gpaDisplay.textContent = '0.00';
+            gpaTotalCreditsDisplay.textContent = '0.0';
         }
     });
-});
 
-// Grade Tracker Functions
-async function addGrade(courseName, grade, weight) {
-    if (!userId) {
-        showCustomAlert("Please sign in to add grades.", 'error');
-        return;
-    }
-    try {
-        const gradesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/grades`);
-        await addDoc(gradesCollectionRef, {
-            courseName: courseName,
-            grade: parseFloat(grade),
-            weight: parseFloat(weight),
-            timestamp: new Date()
-        });
-        showCustomAlert("Grade added successfully!", 'success');
-        await loadGrades(); // Reload grades to update the list
-        await updateDashboardGrades(); // Update dashboard
-    } catch (e) {
-        console.error("Error adding document: ", e);
-        showCustomAlert(`Error adding grade: ${e.message}`, 'error');
-    }
-}
-
-async function loadGrades() {
-    if (!userId) {
-        gradesList.innerHTML = '<p class="text-gray-600 dark:text-gray-400">Please sign in to view grades.</p>';
-        gpaDisplay.textContent = '0.00';
-        overallGpaDisplay.textContent = '0.00';
-        return;
-    }
-    gradesList.innerHTML = '<p class="text-gray-600 dark:text-gray-400">Loading grades...</p>';
-    try {
-        const gradesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/grades`);
-        // Note: orderBy is commented out to avoid potential index issues as per instructions.
-        // If sorting is needed, it should be done client-side.
-        const q = query(gradesCollectionRef); // Removed orderBy( "timestamp", "desc")
-        const querySnapshot = await getDocs(q);
-
-        let grades = [];
-        querySnapshot.forEach((doc) => {
-            grades.push({ id: doc.id, ...doc.data() });
-        });
-
-        // Client-side sorting by timestamp (descending)
-        grades.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
-
-        displayGrades(grades);
-        calculateGPA(grades);
-    } catch (e) {
-        console.error("Error loading grades: ", e);
-        gradesList.innerHTML = `<p class="text-red-500">Error loading grades: ${e.message}</p>`;
-        showCustomAlert(`Error loading grades: ${e.message}`, 'error');
-    }
-}
-
-function displayGrades(grades) {
-    gradesList.innerHTML = ''; // Clear current list
-    if (grades.length === 0) {
-        gradesList.innerHTML = '<p class="text-gray-600 dark:text-gray-400">No grades added yet.</p>';
-        return;
-    }
-    grades.forEach(grade => {
-        const li = document.createElement('li');
-        li.className = 'flex justify-between items-center bg-gray-100 dark:bg-gray-700 p-3 rounded-lg shadow-sm mb-2 animate-fade-in-up';
-        li.innerHTML = `
-            <div>
-                <span class="font-semibold">${grade.courseName}:</span> ${grade.grade}% (Weight: ${grade.weight})
-            </div>
-            <button data-id="${grade.id}" class="delete-grade-btn text-red-500 hover:text-red-700 ml-4">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 01-2 0v6a1 1 0 112 0V8z" clip-rule="evenodd" />
-                </svg>
-            </button>
-        `;
-        gradesList.appendChild(li);
-    });
-
-    // Add event listeners for delete buttons
-    document.querySelectorAll('.delete-grade-btn').forEach(button => {
-        button.addEventListener('click', async (e) => {
-            const gradeId = e.currentTarget.dataset.id;
-            if (confirm("Are you sure you want to delete this grade?")) { // Using confirm for simplicity, replace with custom modal in production
-                await deleteGrade(gradeId);
+    // Initial sign-in with custom token or anonymously
+    // This runs only once when the page loads, attempting to sign in.
+    // The onAuthStateChanged listener will handle subsequent UI updates.
+    if (initialAuthToken) {
+        try {
+            await signInWithCustomToken(auth, initialAuthToken);
+        } catch (error) {
+            console.error("Error signing in with custom token:", error);
+            // Fallback to anonymous sign-in if custom token fails
+            try {
+                await signInAnonymously(auth);
+            } catch (anonError) {
+                console.error("Error signing in anonymously:", anonError);
+                loadingFirebase.innerHTML = `<div class="text-red-600 dark:text-red-400">Authentication failed. Please try again later.</div>`;
             }
-        });
-    });
-}
-
-async function deleteGrade(gradeId) {
-    if (!userId) {
-        showCustomAlert("Please sign in to delete grades.", 'error');
-        return;
-    }
-    try {
-        const gradeDocRef = doc(db, `artifacts/${appId}/users/${userId}/grades`, gradeId);
-        await deleteDoc(gradeDocRef);
-        showCustomAlert("Grade deleted successfully!", 'success');
-        await loadGrades(); // Reload grades
-        await updateDashboardGrades(); // Update dashboard
-    } catch (e) {
-        console.error("Error deleting document: ", e);
-        showCustomAlert(`Error deleting grade: ${e.message}`, 'error');
-    }
-}
-
-function calculateGPA(grades) {
-    if (grades.length === 0) {
-        gpaDisplay.textContent = '0.00';
-        overallGpaDisplay.textContent = '0.00';
-        return;
-    }
-
-    let totalWeightedPoints = 0;
-    let totalWeight = 0;
-    let totalGrades = 0;
-    let sumOfGrades = 0;
-
-    grades.forEach(g => {
-        // Convert percentage grade to a 4.0 scale for GPA calculation
-        // This is a simplified conversion. A more accurate system would use letter grades.
-        let gpaEquivalent = 0;
-        if (g.grade >= 90) gpaEquivalent = 4.0;
-        else if (g.grade >= 80) gpaEquivalent = 3.0;
-        else if (g.grade >= 70) gpaEquivalent = 2.0;
-        else if (g.grade >= 60) gpaEquivalent = 1.0;
-        else gpaEquivalent = 0.0;
-
-        totalWeightedPoints += gpaEquivalent * g.weight;
-        totalWeight += g.weight;
-        sumOfGrades += g.grade;
-        totalGrades++;
-    });
-
-    const calculatedGPA = totalWeight > 0 ? (totalWeightedPoints / totalWeight).toFixed(2) : '0.00';
-    const averagePercentage = totalGrades > 0 ? (sumOfGrades / totalGrades).toFixed(2) : '0.00';
-
-    gpaDisplay.textContent = calculatedGPA;
-    overallGpaDisplay.textContent = `${averagePercentage}%`;
-}
-
-// Grade Form Submission
-gradeForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const courseName = courseNameInput.value.trim();
-    const grade = gradeInput.value.trim();
-    const weight = weightInput.value.trim();
-
-    if (courseName && grade && weight) {
-        await addGrade(courseName, grade, weight);
-        courseNameInput.value = '';
-        gradeInput.value = '';
-        weightInput.value = '';
+        }
     } else {
-        showCustomAlert("Please fill in all grade fields.", 'error');
+        try {
+            await signInAnonymously(auth);
+        } catch (anonError) {
+            console.error("Error signing in anonymously:", anonError);
+            loadingFirebase.innerHTML = `<div class="text-red-600 dark:text-red-400">Authentication failed. Please try again later.</div>`;
+        }
     }
-});
 
-// Dashboard Functions
-async function updateDashboardGrades() {
-    if (!userId) {
-        dashboardGradesSummary.innerHTML = '<p class="text-gray-600 dark:text-gray-400">Please sign in to view grades summary.</p>';
-        return;
-    }
-    try {
-        const gradesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/grades`);
-        const q = query(gradesCollectionRef);
-        const querySnapshot = await getDocs(q);
 
-        let grades = [];
-        querySnapshot.forEach((doc) => {
-            grades.push({ id: doc.id, ...doc.data() });
-        });
+    // --- Landing Page Button Handlers ---
+    landingLoginBtn.addEventListener('click', () => loginModal.classList.remove('hidden'));
+    landingSignupBtn.addEventListener('click', () => signupModal.classList.remove('hidden'));
+    document.getElementById('landing-get-started-btn').addEventListener('click', () => signupModal.classList.remove('hidden'));
+    document.getElementById('landing-see-features-btn').addEventListener('click', () => {
+        // Scroll to features section
+        document.getElementById('features-section').scrollIntoView({ behavior: 'smooth' });
+        // Make features section visible (it's initially hidden by opacity/transform)
+        document.getElementById('features-section').style.opacity = '1';
+        document.getElementById('features-section').style.transform = 'translateY(0)';
+    });
 
-        if (grades.length === 0) {
-            dashboardGradesSummary.innerHTML = '<p class="text-gray-600 dark:text-gray-400">No grades to display. Add some in the Grade Tracker!</p>';
+    // --- Modal Switchers and Closers ---
+    closeLoginModalBtn.addEventListener('click', () => loginModal.classList.add('hidden'));
+    closeSignupModalBtn.addEventListener('click', () => signupModal.classList.add('hidden'));
+    switchToSignupBtn.addEventListener('click', () => {
+        loginModal.classList.add('hidden');
+        signupModal.classList.remove('hidden');
+    });
+    switchToLoginBtn.addEventListener('click', () => {
+        signupModal.classList.add('hidden');
+        loginModal.classList.remove('hidden');
+    });
+
+    // --- Firebase Auth Forms (simplified for demonstration) ---
+    // These are for email/password, which are currently simulated.
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        const errorMessage = document.getElementById('login-error-message');
+        errorMessage.classList.add('hidden');
+        try {
+            // In a real app, you'd use signInWithEmailAndPassword(auth, email, password);
+            console.log("Login attempt (email/password not fully implemented for demo)");
+            // For now, just simulate success and switch to app layout
+            loginModal.classList.add('hidden');
+            mainAppLayout.classList.remove('hidden');
+            landingPage.classList.add('hidden');
+            displayPage('dashboard-page');
+        } catch (error) {
+            errorMessage.textContent = error.message;
+            errorMessage.classList.remove('hidden');
+        }
+    });
+
+    document.getElementById('signup-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('signup-email').value;
+        const password = document.getElementById('signup-password').value;
+        const errorMessage = document.getElementById('signup-error-message');
+        errorMessage.classList.add('hidden');
+        try {
+            // In a real app, you'd use createUserWithEmailAndPassword(auth, email, password);
+            console.log("Signup attempt (email/password not fully implemented for demo)");
+            // For now, just simulate success and switch to app layout
+            signupModal.classList.add('hidden');
+            mainAppLayout.classList.remove('hidden');
+            landingPage.classList.add('hidden');
+            displayPage('dashboard-page');
+        } catch (error) {
+            errorMessage.textContent = error.message;
+            errorMessage.classList.remove('hidden');
+        }
+    });
+
+    // --- Google Sign-In/Sign-Up Buttons ---
+    // Create a Google Auth provider instance
+    const googleProvider = new GoogleAuthProvider();
+
+    // Event listener for Google Login button
+    loginGoogleBtn.addEventListener('click', async () => {
+        try {
+            await signInWithPopup(auth, googleProvider);
+            // onAuthStateChanged listener will handle UI update upon successful sign-in
+            loginModal.classList.add('hidden'); // Hide modal if it's still open
+        } catch (error) {
+            console.error("Google Login Error:", error);
+            // Handle specific errors for Google Sign-In
+            let errorMessage = "Google Sign-In failed. Please try again.";
+            if (error.code === 'auth/popup-closed-by-user') {
+                errorMessage = "Google Sign-In window closed. Please try again.";
+            } else if (error.code === 'auth/cancelled-popup-request') {
+                errorMessage = "Another sign-in request is in progress. Please try again.";
+            }
+            showCustomAlert(errorMessage); // Use your custom alert
+        }
+    });
+
+    // Event listener for Google Signup button (can use the same signInWithPopup)
+    signupGoogleBtn.addEventListener('click', async () => {
+        try {
+            await signInWithPopup(auth, googleProvider);
+            // onAuthStateChanged listener will handle UI update upon successful sign-in
+            signupModal.classList.add('hidden'); // Hide modal if it's still open
+        } catch (error) {
+            console.error("Google Signup Error:", error);
+            let errorMessage = "Google Sign-Up failed. Please try again.";
+            if (error.code === 'auth/popup-closed-by-user') {
+                errorMessage = "Google Sign-Up window closed. Please try again.";
+            } else if (error.code === 'auth/cancelled-popup-request') {
+                errorMessage = "Another sign-up request is in progress. Please try again.";
+            }
+            showCustomAlert(errorMessage); // Use your custom alert
+        }
+    });
+
+
+    // Logout button
+    logoutBtn.addEventListener('click', async () => {
+        try {
+            await signOut(auth);
+            // onAuthStateChanged will handle UI update
+        } catch (error) {
+            console.error("Error logging out:", error);
+        }
+    });
+
+    // --- Navigation Handlers ---
+    navDashboard.addEventListener('click', () => displayPage('dashboard-page'));
+    navTimeManagement.addEventListener('click', () => displayPage('time-management-page'));
+    navGradeTracker.addEventListener('click', () => displayPage('grade-tracker-page'));
+    navExtracurriculars.addEventListener('click', () => displayPage('extracurriculars-page'));
+    navCalendarSync.addEventListener('click', () => displayPage('calendar-sync-page'));
+    navSettings.addEventListener('click', () => displayPage('settings-page'));
+
+    // Add event listener for the sidebar app title to redirect to dashboard
+    sidebarAppTitle.addEventListener('click', () => displayPage('dashboard-page'));
+
+
+    // --- AI Chat Functionality ---
+    sendAiChatBtn.addEventListener('click', sendAIChatMessage);
+    aiChatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault(); // Prevent new line
+            sendAIChatMessage();
+        }
+    });
+
+    async function sendAIChatMessage() {
+        const userText = aiChatInput.value.trim();
+        if (userText === '') {
+            aiChatError.textContent = 'Please enter a message.';
+            aiChatError.classList.remove('hidden');
             return;
         }
 
-        let totalWeightedPoints = 0;
-        let totalWeight = 0;
-        let sumOfGrades = 0;
-        let totalCourses = 0;
-        const courseAverages = {}; // To store average for each course
+        aiChatError.classList.add('hidden');
+        aiChatLoadingSpinner.classList.remove('hidden');
+        sendAiChatBtn.disabled = true;
+        aiChatInput.disabled = true;
 
-        grades.forEach(g => {
-            // Calculate GPA equivalent
-            let gpaEquivalent = 0;
-            if (g.grade >= 90) gpaEquivalent = 4.0;
-            else if (g.grade >= 80) gpaEquivalent = 3.0;
-            else if (g.grade >= 70) gpaEquivalent = 2.0;
-            else if (g.grade >= 60) gpaEquivalent = 1.0;
-            else gpaEquivalent = 0.0;
+        // Display user message
+        const userMessageDiv = document.createElement('div');
+        userMessageDiv.className = 'flex justify-end mb-2';
+        userMessageDiv.innerHTML = `<div class="bg-indigo-500 text-white p-3 rounded-lg max-w-[80%]">${userText}</div>`;
+        aiChatOutput.prepend(userMessageDiv); // Add to top to maintain reverse order
 
-            totalWeightedPoints += gpaEquivalent * g.weight;
-            totalWeight += g.weight;
-
-            // Calculate course averages
-            if (!courseAverages[g.courseName]) {
-                courseAverages[g.courseName] = { sum: 0, count: 0, totalWeight: 0 };
-            }
-            courseAverages[g.courseName].sum += g.grade * g.weight; // Sum of grade * weight
-            courseAverages[g.courseName].totalWeight += g.weight; // Sum of weights for the course
-            totalCourses++;
-        });
-
-        const overallCalculatedGPA = totalWeight > 0 ? (totalWeightedPoints / totalWeight).toFixed(2) : '0.00';
-
-        let summaryHtml = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-indigo-100 dark:bg-indigo-900 p-4 rounded-lg shadow-md">
-                    <h3 class="font-semibold text-lg text-indigo-800 dark:text-indigo-200 mb-2">Overall GPA</h3>
-                    <p class="text-3xl font-bold text-indigo-900 dark:text-indigo-100">${overallCalculatedGPA}</p>
-                </div>
-                <div class="bg-blue-100 dark:bg-blue-900 p-4 rounded-lg shadow-md">
-                    <h3 class="font-semibold text-lg text-blue-800 dark:text-blue-200 mb-2">Total Courses Tracked</h3>
-                    <p class="text-3xl font-bold text-blue-900 dark:text-blue-100">${Object.keys(courseAverages).length}</p>
-                </div>
-            </div>
-            <h3 class="font-semibold text-xl text-gray-900 dark:text-gray-100 mt-6 mb-3">Course Breakdown</h3>
-            <ul class="space-y-2">
-        `;
-
-        for (const courseName in courseAverages) {
-            const avg = courseAverages[courseName];
-            const courseAvgPercentage = avg.totalWeight > 0 ? (avg.sum / avg.totalWeight).toFixed(2) : '0.00';
-            summaryHtml += `
-                <li class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm flex justify-between items-center">
-                    <span class="font-medium">${courseName}</span>
-                    <span class="text-gray-700 dark:text-gray-300">${courseAvgPercentage}%</span>
-                </li>
-            `;
-        }
-        summaryHtml += `</ul>`;
-        dashboardGradesSummary.innerHTML = summaryHtml;
-
-    } catch (e) {
-        console.error("Error updating dashboard grades: ", e);
-        dashboardGradesSummary.innerHTML = `<p class="text-red-500">Error loading dashboard grades: ${e.message}</p>`;
-    }
-}
-
-// Time Management Chatbot Functions
-sendChatBtn.addEventListener('click', async () => {
-    const userText = aiChatInput.value.trim();
-    if (userText) {
-        await sendUserMessageToAI(userText);
-    } else {
-        showCustomAlert("Please enter a message.", 'info');
-    }
-});
-
-aiChatInput.addEventListener('keypress', async (e) => {
-    if (e.key === 'Enter') {
-        const userText = aiChatInput.value.trim();
-        if (userText) {
-            await sendUserMessageToAI(userText);
-        } else {
-            showCustomAlert("Please enter a message.", 'info');
-        }
-    }
-});
-
-generateScheduleBtn.addEventListener('click', async () => {
-    const prompt = "generate schedule";
-    await sendUserMessageToAI(prompt);
-});
-
-async function sendUserMessageToAI(userText) {
-    // Display user message
-    const userMessageDiv = document.createElement('div');
-    userMessageDiv.className = 'flex justify-end mb-2';
-    const userBubble = document.createElement('div');
-    userBubble.className = 'bg-indigo-500 text-white p-3 rounded-lg max-w-[80%]';
-    userBubble.textContent = userText; // Use textContent to prevent XSS
-    userMessageDiv.appendChild(userBubble);
-    aiChatOutput.prepend(userMessageDiv); // Add to top to maintain reverse order
-    aiChatInput.value = ''; // Clear input
-
-    // Display loading indicator for AI response
-    const loadingDiv = document.createElement('div');
-    loadingDiv.className = 'flex justify-start mb-2';
-    loadingDiv.innerHTML = `
-        <div class="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 p-3 rounded-lg max-w-[80%] flex items-center">
-            <svg class="animate-spin h-5 w-5 mr-3 text-gray-500" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Generating response...
-        </div>
-    `;
-    aiChatOutput.prepend(loadingDiv);
-
-    try {
-        const response = await fetch('http://127.0.0.1:5000/generate', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ user_text: userText })
-        });
-
-        const data = await response.json();
-
-        // Remove loading indicator
-        aiChatOutput.removeChild(loadingDiv);
-
-        const aiMessageDiv = document.createElement('div');
-        aiMessageDiv.className = 'flex justify-start mb-2';
-        const aiBubble = document.createElement('div');
-        aiBubble.className = 'bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 p-3 rounded-lg max-w-[80%] prose dark:prose-invert';
-
-        if (response.ok) {
-            // Convert markdown to HTML for display
-            aiBubble.innerHTML = marked.parse(data.response);
-        } else {
-            aiBubble.textContent = `Error: ${data.error || 'Unknown error'}`;
-            showCustomAlert(`AI response error: ${data.error || 'Unknown error'}`, 'error');
-        }
-        aiMessageDiv.appendChild(aiBubble);
-        aiChatOutput.prepend(aiMessageDiv);
-
-        // Update dashboard time management summary with the latest AI response
-        dashboardTimeManagementSummary.innerHTML = marked.parse(data.response);
-
-    } catch (error) {
-        console.error("Error fetching AI response:", error);
-        // Remove loading indicator
-        aiChatOutput.removeChild(loadingDiv);
-
-        const errorMessageDiv = document.createElement('div');
-        errorMessageDiv.className = 'flex justify-start mb-2';
-        const errorBubble = document.createElement('div');
-        errorBubble.className = 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 p-3 rounded-lg max-w-[80%]';
-        errorBubble.textContent = 'Failed to get AI response. Please check the backend server and your network connection.';
-        errorMessageDiv.appendChild(errorBubble);
-        aiChatOutput.prepend(errorMessageDiv);
-        showCustomAlert("Failed to get AI response. Check console for details.", 'error');
-    }
-}
-
-// Settings Page Functions
-deleteUserDataBtn.addEventListener('click', async () => {
-    if (!userId) {
-        showCustomAlert("No user is signed in.", 'error');
-        return;
-    }
-
-    // Custom confirmation dialog
-    const confirmDeleteModal = document.getElementById('confirm-delete-modal');
-    confirmDeleteModal.classList.remove('hidden');
-
-    document.getElementById('confirm-delete-yes').onclick = async () => {
-        confirmDeleteModal.classList.add('hidden');
-        deleteUserDataMessage.classList.add('hidden'); // Hide previous messages
+        aiChatInput.value = ''; // Clear input
 
         try {
-            // Delete grades collection
-            const gradesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/grades`);
-            const querySnapshot = await getDocs(query(gradesCollectionRef));
-            const deletePromises = [];
-            querySnapshot.forEach((docToDelete) => {
-                deletePromises.push(deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/grades`, docToDelete.id)));
+            const response = await fetch('https://student-planner-backend.onrender.com/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_text: userText })
             });
-            await Promise.all(deletePromises);
-            console.log("All grades deleted for user:", userId);
 
-            // After deleting data, sign out the user
-            await signOut(auth);
-            showCustomAlert("All your data has been deleted and you have been logged out.", 'success');
-            deleteUserDataMessage.textContent = 'All your data has been successfully deleted.';
-            deleteUserDataMessage.classList.remove('hidden', 'text-red-600', 'dark:text-red-400');
-            deleteUserDataMessage.classList.add('text-green-600', 'dark:text-green-400');
+            const data = await response.json();
 
-        } catch (e) {
-            console.error("Error deleting user data:", e);
-            deleteUserDataMessage.textContent = `Error deleting data: ${e.message}. Please try again or contact support.`;
-            deleteUserDataMessage.classList.remove('hidden');
-            showCustomAlert("Error deleting data. Please check console for details.", 'error');
+            if (response.ok) {
+                const aiMessageDiv = document.createElement('div');
+                aiMessageDiv.className = 'flex justify-start mb-2';
+                aiMessageDiv.innerHTML = `<div class="bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100 p-3 rounded-lg max-w-[80%] prose dark:prose-invert">${data.response.replace(/\n/g, '<br>')}</div>`;
+                aiChatOutput.prepend(aiMessageDiv); // Add to top
+            } else {
+                aiChatError.textContent = `Error: ${data.error || 'Something went wrong on the server.'}`;
+                aiChatError.classList.remove('hidden');
+                const errorMessageDiv = document.createElement('div');
+                errorMessageDiv.className = 'flex justify-start mb-2';
+                errorMessageDiv.innerHTML = `<div class="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 p-3 rounded-lg max-w-[80%]">Error: ${data.error || 'Something went wrong.'}</div>`;
+                aiChatOutput.prepend(errorMessageDiv);
+            }
+        } catch (error) {
+            console.error('Fetch error:', error);
+            aiChatError.textContent = 'Could not connect to the AI server. Please ensure the Python backend is running.';
+            aiChatError.classList.remove('hidden');
+            const errorMessageDiv = document.createElement('div');
+            errorMessageDiv.className = 'flex justify-start mb-2';
+            errorMessageDiv.innerHTML = `<div class="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 p-3 rounded-lg max-w-[80%]">Error: Could not connect to the AI server.</div>`;
+            aiChatOutput.prepend(errorMessageDiv);
+        } finally {
+            aiChatLoadingSpinner.classList.add('hidden');
+            sendAiChatBtn.disabled = false;
+            aiChatInput.disabled = false;
+            aiChatOutput.scrollTop = 0; // Scroll to top (since we prepend)
+        }
+    }
+
+    // --- GPA Calculator Functions (Now uses Firestore) ---
+
+    // Renders the grade point settings inputs
+    const renderGradePointSettings = () => {
+        gradePointSettingsContainer.innerHTML = ''; // Clear previous settings
+        gradePointSettingsLoading.classList.add('hidden'); // Hide loading text
+
+        for (const grade in gradePointMap) {
+            if (gradePointMap[grade] !== null) { // Only render for grades with numerical points
+                const settingDiv = document.createElement('div');
+                settingDiv.className = 'flex items-center space-x-2';
+                settingDiv.innerHTML = `
+                    <label for="gp-${grade}" class="text-gray-700 dark:text-gray-300 font-medium">${grade}:</label>
+                    <input type="number" id="gp-${grade}"
+                           class="w-full rounded-md border-gray-300 shadow-sm sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 p-1"
+                           step="0.1" min="0" max="4.3" value="${gradePointMap[grade].toFixed(1)}">
+                `;
+                gradePointSettingsContainer.appendChild(settingDiv);
+
+                const inputElement = settingDiv.querySelector(`#gp-${grade}`);
+                inputElement.addEventListener('input', (e) => {
+                    const newPoints = parseFloat(e.target.value);
+                    if (!isNaN(newPoints) && newPoints >= 0 && newPoints <= 4.3) {
+                        gradePointMap[grade] = newPoints;
+                        // No need to reload grades from Firestore, just re-render current data
+                        // If you want to persist these settings, you'd save them to Firestore too.
+                        loadGrades(); // Recalculate and re-render GPA based on new map
+                    }
+                });
+            }
         }
     };
 
-    document.getElementById('confirm-delete-no').onclick = () => {
-        confirmDeleteModal.classList.add('hidden');
-        showCustomAlert("Data deletion cancelled.", 'info');
+    // Calculates GPA based on provided courses and gradePointMap
+    const calculateGPA = (courses) => {
+        let totalWeightedPoints = 0;
+        let totalCredits = 0;
+
+        courses.forEach(course => {
+            const gradePoints = gradePointMap[course.grade];
+            if (gradePoints !== null && gradePoints !== undefined) { // Only count grades that affect GPA
+                totalWeightedPoints += gradePoints * course.credits;
+                totalCredits += course.credits;
+            }
+        });
+
+        const gpa = totalCredits > 0 ? (totalWeightedPoints / totalCredits) : 0;
+        return { gpa: gpa.toFixed(2), totalCredits: totalCredits.toFixed(1) };
     };
-});
+
+    // Loads grades from Firestore and renders the courses table and updates GPA display
+    async function loadGrades() {
+        const userId = auth.currentUser ? auth.currentUser.uid : null;
+        if (!userId) {
+            coursesListBody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 whitespace-nowrap text-center text-gray-500 dark:text-gray-400">Please log in to view your courses.</td></tr>`;
+            noCoursesRow.classList.add('hidden'); // Hide if explicitly showing login message
+            gpaDisplay.textContent = '0.00';
+            gpaTotalCreditsDisplay.textContent = '0.0';
+            gpaTableContainer.classList.add('hidden');
+            gpaSummary.classList.add('hidden');
+            return;
+        }
+
+        // Show loading state for grade tracker table
+        noCoursesRow.classList.add('hidden'); // Hide "No courses added yet" while loading
+        coursesListBody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 whitespace-nowrap text-center text-gray-500 dark:text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin inline-block mr-2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Loading courses...
+        </td></tr>`;
+
+        let currentCourses = []; // Local array to hold fetched courses
+        try {
+            const gradesCollectionRef = collection(db, `users/${userId}/grades`);
+            // Order by timestamp to ensure consistent loading order, useful for recent grades later
+            const q = query(gradesCollectionRef, orderBy('timestamp', 'desc'));
+            const querySnapshot = await getDocs(q);
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                currentCourses.push({ id: doc.id, ...data });
+            });
+
+            coursesListBody.innerHTML = ''; // Clear loading/no courses message
+
+            if (currentCourses.length === 0) {
+                noCoursesRow.classList.remove('hidden');
+                gpaTableContainer.classList.add('hidden');
+                gpaSummary.classList.add('hidden');
+            } else {
+                noCoursesRow.classList.add('hidden'); // Ensure it's hidden if courses exist
+                gpaTableContainer.classList.remove('hidden');
+                gpaSummary.classList.remove('hidden');
+
+                currentCourses.forEach(course => {
+                    const gradePoint = gradePointMap[course.grade];
+                    const weightedPoints = gradePoint !== null && gradePoint !== undefined ? (gradePoint * course.credits).toFixed(2) : 'N/A';
+                    const gradePointsDisplay = gradePoint !== null && gradePoint !== undefined ? gradePoint.toFixed(1) : 'N/A';
+
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150';
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">${course.name || 'Unnamed Course'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${course.credits.toFixed(1)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${course.grade}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${gradePointsDisplay}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${weightedPoints}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button data-id="${course.id}" class="delete-course-btn text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                            </button>
+                        </td>
+                    `;
+                    coursesListBody.appendChild(row);
+                });
+
+                document.querySelectorAll('.delete-course-btn').forEach(button => {
+                    button.addEventListener('click', deleteCourse);
+                });
+            }
+
+            const { gpa, totalCredits } = calculateGPA(currentCourses);
+            gpaTotalCreditsDisplay.textContent = totalCredits;
+            gpaDisplay.textContent = gpa;
+
+            renderGradePointSettings(); // Always render settings when GPA is rendered/updated
+
+        } catch (e) {
+            console.error("Error loading grades: ", e);
+            coursesListBody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 whitespace-nowrap text-center text-red-600 dark:text-red-400">Error loading courses.</td></tr>`;
+            noCoursesRow.classList.add('hidden');
+            gpaTableContainer.classList.add('hidden');
+            gpaSummary.classList.add('hidden');
+        }
+    }
+
+    // Event listener for adding a new course
+    addCourseBtn.addEventListener('click', async () => {
+        const userId = auth.currentUser ? auth.currentUser.uid : null;
+        if (!userId) {
+            addCourseMessage.textContent = "You must be logged in to add courses.";
+            addCourseMessage.classList.remove('hidden');
+            return;
+        }
+
+        const courseName = newCourseNameInput.value.trim();
+        const credits = parseFloat(newCourseCreditsInput.value);
+        const grade = newCourseGradeSelect.value;
+
+        if (isNaN(credits) || credits <= 0 || !grade) {
+            addCourseMessage.textContent = "Please enter valid credits (a number greater than 0) and select a grade.";
+            addCourseMessage.classList.remove('hidden');
+            return;
+        }
+        addCourseMessage.classList.add('hidden'); // Hide any previous error messages
+
+        try {
+            await addDoc(collection(db, `users/${userId}/grades`), {
+                name: courseName || "Unnamed Course", // Allow optional name
+                credits: credits,
+                grade: grade,
+                timestamp: new Date() // Add a timestamp for sorting recent grades
+            });
+            newCourseNameInput.value = '';
+            newCourseCreditsInput.value = '1.0';
+            newCourseGradeSelect.value = '';
+            await loadGrades(); // Reload and render grades after adding
+            await updateDashboardGrades(); // Update dashboard
+        } catch (e) {
+            console.error("Error adding document: ", e);
+            showCustomAlert("Error adding course. Please try again.");
+        }
+    });
+
+    // Function to delete a course from Firestore
+    async function deleteCourse(event) {
+        const userId = auth.currentUser ? auth.currentUser.uid : null;
+        if (!userId) return;
+
+        showCustomConfirm("Are you sure you want to delete this course?", async () => {
+            const courseId = event.currentTarget.dataset.id;
+            try {
+                await deleteDoc(doc(db, `users/${userId}/grades`, courseId));
+                await loadGrades(); // Reload grades after deletion
+                await updateDashboardGrades(); // Update dashboard
+            } catch (e) {
+                console.error("Error deleting document: ", e);
+                showCustomAlert("Error deleting course. Please try again.");
+            }
+        });
+    }
+
+    // Function to update Recent Grades and Overall GPA on Dashboard
+    async function updateDashboardGrades() {
+        recentGradesLoadingDashboard.classList.remove('hidden');
+        recentGradesListDashboard.innerHTML = '';
+        noRecentGradesDashboard.classList.add('hidden');
+        overallGpaDashboard.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin inline-block mr-2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`;
 
 
-// Initial calls if user is already authenticated on page load
-// This block handles the state when the page first loads.
-// The onAuthStateChanged listener will also handle this, but this ensures
-// the initial UI state is set up quickly.
-// This block is largely redundant due to onAuthStateChanged and DOMContentLoaded listener
-// but kept for clarity on initial load intent.
-/*
-document.addEventListener('DOMContentLoaded', async () => {
+        const userId = auth.currentUser ? auth.currentUser.uid : null;
+        if (!userId) {
+            recentGradesLoadingDashboard.classList.add('hidden');
+            noRecentGradesDashboard.classList.remove('hidden');
+            overallGpaDashboard.textContent = 'N/A';
+            return;
+        }
+
+        let allCourses = [];
+        try {
+            const gradesCollectionRef = collection(db, `users/${userId}/grades`);
+            // Get all courses to calculate overall GPA
+            const allCoursesQuerySnapshot = await getDocs(gradesCollectionRef);
+
+            allCoursesQuerySnapshot.forEach((doc) => {
+                allCourses.push({ id: doc.id, ...doc.data() });
+            });
+
+            // Calculate overall GPA for dashboard
+            const { gpa } = calculateGPA(allCourses);
+            overallGpaDashboard.textContent = gpa;
+
+            // Query for recent grades (e.g., last 5, ordered by timestamp descending)
+            // Note: We are re-querying here for simplicity, but in a larger app,
+            // you might pass `allCourses` and sort locally if you already fetched all.
+            const qRecent = query(gradesCollectionRef, orderBy('timestamp', 'desc'), limit(5));
+            const recentGradesQuerySnapshot = await getDocs(qRecent);
+
+            recentGradesLoadingDashboard.classList.add('hidden');
+
+            if (recentGradesQuerySnapshot.empty) {
+                noRecentGradesDashboard.classList.remove('hidden');
+            } else {
+                recentGradesQuerySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const gradeItem = document.createElement('div');
+                    gradeItem.className = 'flex items-center justify-between py-2 border-b last:border-b-0 border-gray-200 dark:border-gray-700';
+                    gradeItem.innerHTML = `
+                        <span class="text-gray-800 dark:text-gray-200">${data.name || 'Unnamed Course'}</span>
+                        <span class="text-lg font-semibold text-indigo-600 dark:text-indigo-400">${data.grade}</span>
+                    `;
+                    recentGradesListDashboard.appendChild(gradeItem);
+                });
+            }
+        } catch (e) {
+            console.error("Error updating dashboard grades:", e);
+            recentGradesLoadingDashboard.classList.add('hidden');
+            noRecentGradesDashboard.classList.remove('hidden');
+            recentGradesListDashboard.innerHTML = `<p class="text-red-600 dark:text-red-400">Error loading recent grades.</p>`;
+            overallGpaDashboard.textContent = 'Error';
+        }
+    }
+
+    // --- GPA Planning Calculator Logic ---
+    calculatePlanningGpaBtn.addEventListener('click', () => {
+        const currentGpa = parseFloat(currentGpaInput.value);
+        const currentCredits = parseFloat(currentGpaCreditsInput.value);
+        const additionalCredits = parseFloat(additionalCreditsInput.value);
+        const targetGpa = parseFloat(targetGpaInput.value);
+
+        planningGpaResultDiv.classList.add('hidden');
+        planningGpaMessage.classList.add('hidden');
+        requiredGpaDisplay.textContent = 'N/A';
+
+        if (isNaN(currentGpa) || isNaN(currentCredits) || isNaN(additionalCredits) || isNaN(targetGpa) ||
+            currentCredits < 0 || additionalCredits <= 0 || targetGpa < 0) {
+            planningGpaMessage.textContent = 'Please enter valid numbers for all fields. Current Credits must be >= 0, Additional Credits must be > 0.';
+            planningGpaMessage.classList.remove('hidden');
+            return;
+        }
+
+        // Formula: Required GPA = (Target Total Points - Current Total Points) / Additional Credits
+        // Target Total Points = Target GPA * (Current Credits + Additional Credits)
+        // Current Total Points = Current GPA * Current Credits
+        const targetTotalPoints = targetGpa * (currentCredits + additionalCredits);
+        const currentTotalPoints = currentGpa * currentCredits;
+
+        const requiredGpaPoints = (targetTotalPoints - currentTotalPoints);
+
+        if (additionalCredits === 0 && requiredGpaPoints > 0) {
+            planningGpaMessage.textContent = 'Cannot reach target GPA with 0 additional credits if current GPA is lower.';
+            planningGpaMessage.classList.remove('hidden');
+            return;
+        } else if (additionalCredits === 0 && requiredGpaPoints <= 0) {
+            requiredGpaDisplay.textContent = 'N/A (already at/above target or 0 additional credits)';
+            planningGpaResultDiv.classList.remove('hidden');
+            return;
+        }
+
+
+        const requiredGpa = requiredGpaPoints / additionalCredits;
+
+        if (requiredGpa < 0) {
+            requiredGpaDisplay.textContent = `0.00 (You'll easily reach your target even with Fs!)`;
+            planningGpaResultDiv.classList.remove('hidden');
+        } else if (requiredGpa > 4.3) { // Assuming 4.3 is the max possible GPA
+            requiredGpaDisplay.textContent = `${requiredGpa.toFixed(2)} (Impossible to achieve)`;
+            planningGpaResultDiv.classList.remove('hidden');
+            planningGpaMessage.textContent = 'It appears impossible to reach your target GPA with the given credits.';
+            planningGpaMessage.classList.remove('hidden');
+        } else {
+            requiredGpaDisplay.textContent = requiredGpa.toFixed(2);
+            planningGpaResultDiv.classList.remove('hidden');
+        }
+    });
+
+    // Custom Alert/Confirm Modals (replacing browser's alert/confirm)
+    function showCustomAlert(message) {
+        const modalId = 'custom-alert-modal';
+        let modal = document.getElementById(modalId);
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = modalId;
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 hidden';
+            modal.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6 relative">
+                    <p class="text-gray-900 dark:text-gray-100 text-center mb-6">${message}</p>
+                    <button class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors duration-200" onclick="document.getElementById('${modalId}').classList.add('hidden');">
+                        OK
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        } else {
+            modal.querySelector('p').textContent = message;
+        }
+        modal.classList.remove('hidden');
+    }
+
+    function showCustomConfirm(message, onConfirm) {
+        const modalId = 'custom-confirm-modal';
+        let modal = document.getElementById(modalId);
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = modalId;
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 hidden';
+            modal.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6 relative">
+                    <p class="text-gray-900 dark:text-gray-100 text-center mb-6">${message}</p>
+                    <div class="flex justify-around space-x-4">
+                        <button id="confirm-yes" class="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors duration-200">Yes</button>
+                        <button id="confirm-no" class="flex-1 bg-gray-300 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors duration-200">No</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        } else {
+            modal.querySelector('p').textContent = message;
+        }
+        modal.classList.remove('hidden');
+
+        const confirmYes = document.getElementById('confirm-yes');
+        const confirmNo = document.getElementById('confirm-no');
+
+        // Clear previous listeners to prevent multiple executions
+        const newConfirmYes = confirmYes.cloneNode(true);
+        const newConfirmNo = confirmNo.cloneNode(true);
+        confirmYes.parentNode.replaceChild(newConfirmYes, confirmYes);
+        confirmNo.parentNode.replaceChild(newConfirmNo, confirmNo);
+
+        newConfirmYes.addEventListener('click', () => {
+            modal.classList.add('hidden');
+            onConfirm();
+        });
+        newConfirmNo.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+    }
+
+    // --- Delete User Data Functionality ---
+    deleteUserDataBtn.addEventListener('click', async () => {
+        const userId = auth.currentUser ? auth.currentUser.uid : null;
+        if (!userId) {
+            showCustomAlert("You must be logged in to delete your data.");
+            return;
+        }
+
+        showCustomConfirm("WARNING: This will permanently delete ALL your grade data. This action cannot be undone. Are you sure?", async () => {
+            deleteUserDataMessage.classList.add('hidden');
+            try {
+                // Get all documents in the user's grades subcollection
+                const gradesCollectionRef = collection(db, `users/${userId}/grades`);
+                const querySnapshot = await getDocs(gradesCollectionRef);
+
+                // Create a batch to delete all documents efficiently
+                const deletePromises = [];
+                querySnapshot.forEach((doc) => {
+                    deletePromises.push(deleteDoc(doc.ref));
+                });
+
+                await Promise.all(deletePromises); // Execute all deletions concurrently
+
+                // Optionally, if you also want to delete the user's authentication account:
+                // This requires re-authentication or a Cloud Function for security reasons.
+                // For a client-side solution, the user might need to sign in again immediately before this call.
+                // await auth.currentUser.delete(); // This will likely fail without recent re-authentication
+
+                showCustomAlert("Your data has been successfully deleted. You will now be logged out.");
+                await signOut(auth); // Log out the user after data deletion
+            } catch (e) {
+                console.error("Error deleting user data:", e);
+                deleteUserDataMessage.textContent = `Error deleting data: ${e.message}. Please try again or contact support.`;
+                deleteUserDataMessage.classList.remove('hidden');
+                showCustomAlert("Error deleting data. Please check console for details.");
+            }
+        });
+    });
+
+
+    // Initial calls if user is already authenticated on page load
+    // This block handles the state when the page first loads.
+    // The onAuthStateChanged listener will also handle this, but this ensures
+    // the initial UI state is set up quickly.
     if (auth && auth.currentUser) {
         loadingFirebase.classList.add('hidden');
         landingPage.classList.add('hidden');
@@ -633,4 +840,3 @@ document.addEventListener('DOMContentLoaded', async () => {
         landingPage.classList.remove('hidden');
     }
 });
-*/
