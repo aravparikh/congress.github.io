@@ -1,4 +1,8 @@
 Flask
 Flask-Cors
 openai
-gunicorn # Render needs a production-ready WSGI server like Gunicorn
+gunicorn
+google-api-python-client
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
