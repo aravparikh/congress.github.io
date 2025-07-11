@@ -70,7 +70,7 @@ Always generate the best schedule you can from current data, then ask the next q
 
 MODEL_NAME = "gpt-4o-mini"
 
-def generate_response(user_text: str, max_tokens: int = 512) -> str:
+def generate_response(user_text: str, max_tokens: int = 1024) -> str:
     """Send user_text to the model and return the assistant's reply."""
     try:
         chat_completion = client.chat.completions.create(
