@@ -4,114 +4,90 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Planner - Master Your Academic Journey</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Custom Styles -->
     <style>
         body {
             font-family: 'Inter', sans-serif;
         }
-        
         /* Smooth transitions for all elements */
         * {
             transition: all 0.2s ease-in-out;
         }
-        
         /* Custom gradient backgrounds */
         .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
-        
         .gradient-bg-2 {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         }
-        
         .gradient-bg-3 {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
         }
-        
         .gradient-bg-4 {
             background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
         }
-        
         /* Glass morphism effect */
         .glass {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        
         .dark .glass {
             background: rgba(0, 0, 0, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        
         /* Floating animation */
         @keyframes float {
             0%, 100% { transform: translateY(0px) rotate(0deg); }
             50% { transform: translateY(-20px) rotate(3deg); }
         }
-        
         .float-animation {
             animation: float 6s ease-in-out infinite;
         }
-        
         /* Pulse animation for loading */
         @keyframes pulse-glow {
             0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
             50% { box-shadow: 0 0 40px rgba(99, 102, 241, 0.6); }
         }
-        
         .pulse-glow {
             animation: pulse-glow 2s infinite;
         }
-        
         /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
         }
-        
         ::-webkit-scrollbar-track {
             background: #f1f5f9;
         }
-        
         .dark ::-webkit-scrollbar-track {
             background: #1e293b;
         }
-        
         ::-webkit-scrollbar-thumb {
             background: linear-gradient(135deg, #667eea, #764ba2);
             border-radius: 4px;
         }
-        
         ::-webkit-scrollbar-thumb:hover {
             background: linear-gradient(135deg, #5a67d8, #6b46c1);
         }
-        
         /* Hide pages by default */
         .page-content {
             display: none;
             animation: fadeIn 0.3s ease-in-out;
         }
-        
         .page-content.active {
             display: block;
         }
-        
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        
         /* Landing page hero background */
         .hero-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             position: relative;
             overflow: hidden;
         }
-        
         .hero-bg::before {
             content: '';
             position: absolute;
@@ -122,23 +98,19 @@
             background: radial-gradient(ellipse, rgba(255,255,255,0.1) 0%, transparent 70%);
             animation: float 8s ease-in-out infinite;
         }
-        
         /* Card hover effects */
         .card-hover {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
         .card-hover:hover {
             transform: translateY(-8px);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
         }
-        
         /* Button animations */
         .btn-primary {
             position: relative;
             overflow: hidden;
         }
-        
         .btn-primary::before {
             content: '';
             position: absolute;
@@ -149,37 +121,30 @@
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
             transition: left 0.6s;
         }
-        
         .btn-primary:hover::before {
             left: 100%;
         }
-        
         /* Navigation active state */
         .nav-item.active {
             background: linear-gradient(135deg, #667eea, #764ba2) !important;
             color: white !important;
             box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
         }
-        
         .nav-item.active span {
             color: white !important;
         }
-        
         /* Custom chat bubble styles */
         .chat-bubble-user {
             background: linear-gradient(135deg, #667eea, #764ba2);
             position: relative;
         }
-        
         .chat-bubble-ai {
             background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
             position: relative;
         }
-        
         .dark .chat-bubble-ai {
             background: linear-gradient(135deg, #374151, #4b5563);
         }
-        
         /* GPA display animations */
         .gpa-display {
             background: linear-gradient(135deg, #10b981, #059669);
@@ -187,19 +152,16 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        
         /* Custom form inputs */
         .form-input {
             transition: all 0.3s ease;
             border: 2px solid transparent;
         }
-        
         .form-input:focus {
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
             transform: translateY(-2px);
         }
-        
         /* Loading spinner */
         .spinner {
             width: 40px;
@@ -209,18 +171,15 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
-        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .hero-bg::before {
                 right: -50%;
             }
-            
             .mobile-nav {
                 position: fixed;
                 bottom: 0;
@@ -230,7 +189,6 @@
                 border-top: 1px solid #e5e7eb;
                 z-index: 50;
             }
-            
             .dark .mobile-nav {
                 background: #1f2937;
                 border-top-color: #374151;
@@ -240,7 +198,6 @@
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-900 text-gray-900 dark:text-gray-100 antialiased">
 
-    <!-- Enhanced Loading Spinner -->
     <div id="loading-firebase" class="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
         <div class="text-center">
             <div class="spinner mb-4 mx-auto"></div>
@@ -249,16 +206,13 @@
         </div>
     </div>
 
-    <!-- Enhanced Landing Page -->
     <div id="landing-page" class="w-full min-h-screen flex flex-col hero-bg relative overflow-hidden">
-        <!-- Animated Background Elements -->
         <div class="absolute inset-0 overflow-hidden">
             <div class="absolute -top-40 -right-40 w-80 h-80 bg-white opacity-10 rounded-full float-animation"></div>
             <div class="absolute top-1/2 -left-20 w-60 h-60 bg-white opacity-5 rounded-full float-animation" style="animation-delay: -3s;"></div>
             <div class="absolute bottom-20 right-1/4 w-40 h-40 bg-white opacity-10 rounded-full float-animation" style="animation-delay: -1.5s;"></div>
         </div>
 
-        <!-- Enhanced Header -->
         <header class="relative z-20 p-6 md:px-12 flex justify-between items-center glass">
             <div class="text-3xl font-bold text-white flex items-center">
                 <div class="w-10 h-10 bg-white rounded-lg mr-3 flex items-center justify-center">
@@ -278,7 +232,6 @@
             </nav>
         </header>
 
-        <!-- Enhanced Hero Section -->
         <section class="relative z-10 flex flex-col items-center justify-center flex-grow px-6 text-center text-white">
             <h1 class="text-5xl md:text-7xl font-black leading-tight mb-6">
                 Master Your
@@ -298,7 +251,6 @@
                 </button>
             </div>
             
-            <!-- Floating App Preview -->
             <div class="relative max-w-lg mx-auto float-animation">
                 <div class="bg-white rounded-3xl shadow-2xl p-8 transform rotate-2 hover:rotate-0 transition-transform duration-500">
                     <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 text-white">
@@ -318,7 +270,6 @@
             </div>
         </section>
 
-        <!-- Enhanced Features Section -->
         <section class="relative z-10 w-full max-w-7xl mx-auto px-6 py-16">
             <h2 class="text-4xl font-bold text-center mb-12 text-white">
                 Everything You Need to <span class="text-yellow-300">Succeed</span>
@@ -357,7 +308,6 @@
         </section>
     </div>
 
-    <!-- Enhanced Modals with Glass Effect -->
     <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4 hidden">
         <div class="glass bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-md w-full p-8 relative transform scale-95 hover:scale-100 transition-transform duration-300">
             <div class="text-center mb-8">
@@ -409,7 +359,6 @@
         </div>
     </div>
 
-    <!-- Similar enhanced signup modal -->
     <div id="signup-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4 hidden">
         <div class="glass bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-md w-full p-8 relative transform scale-95 hover:scale-100 transition-transform duration-300">
             <div class="text-center mb-8">
@@ -461,179 +410,182 @@
         </div>
     </div>
 
-    <!-- Enhanced Main App Layout -->
     <div id="main-app-layout" class="w-full min-h-screen flex hidden">
-        <!-- Enhanced Sidebar -->
         <aside class="w-72 glass bg-white dark:bg-gray-900 shadow-2xl border-r border-gray-200 dark:border-gray-700 flex flex-col hidden md:flex">
             <div class="p-6">
                 <div id="sidebar-app-title" class="flex items-center mb-8 cursor-pointer hover:scale-105 transition-transform duration-200">
                     <div class="w-12 h-12 gradient-bg rounded-xl mr-4 flex items-center justify-center">
                         <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.84L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.84l-7-3z"/>
+                            <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.84L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.84l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/>
                         </svg>
                     </div>
                     <div>
                         <h1 class="text-xl font-bold text-gray-900 dark:text-white">Student Planner</h1>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Academic Excellence</p>
                     </div>
-                    </div>
                 </div>
-            </aside>  <script type="module" src="app.js"></script>
-        </div> </div> </body>
-</html>
-<main class="flex-1 p-6 md:p-8 overflow-y-auto">
-                <div id="dashboard-page" class="page-content">
-                    <div class="mb-8">
-                        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-                        <p class="text-gray-500 dark:text-gray-400 mt-1">Welcome back! Here's a summary of your academic progress.</p>
-                        <p id="user-id-display" class="text-xs text-gray-400 dark:text-gray-500 mt-2">Loading user...</p>
-                    </div>
+                </div>
+        </aside>
 
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 flex flex-col justify-between">
-                            <div>
-                                <h3 class="font-semibold text-gray-500 dark:text-gray-400">Overall GPA</h3>
-                                <p id="overall-gpa" class="text-5xl font-bold text-indigo-600 dark:text-indigo-400 mt-2">...</p>
-                            </div>
-                            <p class="text-sm text-gray-400 mt-4">Calculated from all your entered courses.</p>
+        <main class="flex-1 p-6 md:p-8 overflow-y-auto">
+            <div id="dashboard-page" class="page-content">
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+                    <p class="text-gray-500 dark:text-gray-400 mt-1">Welcome back! Here's a summary of your academic progress.</p>
+                    <p id="user-id-display" class="text-xs text-gray-400 dark:text-gray-500 mt-2">Loading user...</p>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 flex flex-col justify-between">
+                        <div>
+                            <h3 class="font-semibold text-gray-500 dark:text-gray-400">Overall GPA</h3>
+                            <p id="overall-gpa" class="text-5xl font-bold text-indigo-600 dark:text-indigo-400 mt-2">...</p>
                         </div>
-
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 lg:col-span-2">
-                            <h3 class="font-semibold text-gray-500 dark:text-gray-400 mb-4">Recent Grades</h3>
-                            <div id="recent-grades-loading" class="text-center py-4">
-                                <p class="text-gray-500 dark:text-gray-400">Loading recent grades...</p>
-                            </div>
-                            <div id="recent-grades-list" class="space-y-2">
-                                </div>
-                            <div id="no-recent-grades" class="text-center py-4 hidden">
-                                <p class="text-gray-500 dark:text-gray-400">No grades have been added yet.</p>
-                            </div>
+                        <p class="text-sm text-gray-400 mt-4">Calculated from all your entered courses.</p>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 lg:col-span-2">
+                        <h3 class="font-semibold text-gray-500 dark:text-gray-400 mb-4">Recent Grades</h3>
+                        <div id="recent-grades-loading" class="text-center py-4">
+                            <p class="text-gray-500 dark:text-gray-400">Loading recent grades...</p>
+                        </div>
+                        <div id="recent-grades-list" class="space-y-2"></div>
+                        <div id="no-recent-grades" class="text-center py-4 hidden">
+                            <p class="text-gray-500 dark:text-gray-400">No grades have been added yet.</p>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div id="time-management-page" class="page-content">
-                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">AI Time Management</h1>
-                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-                        <div class="flex flex-col h-[60vh]">
-                            <div id="ai-chat-output" class="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-700 rounded-t-lg flex flex-col-reverse">
-                                </div>
-                            <div class="p-4 border-t border-gray-200 dark:border-gray-600">
-                                <div id="ai-chat-error" class="text-red-500 text-sm mb-2 hidden"></div>
-                                <div class="flex items-center space-x-2">
-                                    <textarea id="ai-chat-input" class="form-input w-full p-2" placeholder="Ask for a study schedule, e.g., 'Help me plan my week for finals'"></textarea>
-                                    <button id="send-ai-chat-btn" class="p-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Send</button>
-                                    <div id="ai-chat-loading-spinner" class="spinner hidden"></div>
-                                </div>
+            <div id="time-management-page" class="page-content">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">AI Time Management</h1>
+                 <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+                    <div class="flex flex-col h-[60vh]">
+                        <div id="ai-chat-output" class="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-700 rounded-t-lg flex flex-col-reverse"></div>
+                        <div class="p-4 border-t border-gray-200 dark:border-gray-600">
+                            <div id="ai-chat-error" class="text-red-500 text-sm mb-2 hidden"></div>
+                            <div class="flex items-center space-x-2">
+                                <textarea id="ai-chat-input" class="form-input w-full p-2" placeholder="Ask for a study schedule, e.g., 'Help me plan my week for finals'"></textarea>
+                                <button id="send-ai-chat-btn" class="p-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Send</button>
+                                <div id="ai-chat-loading-spinner" class="spinner hidden"></div>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div id="grade-tracker-page" class="page-content">
-                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Grade Tracker & GPA Calculator</h1>
-                     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                        <div class="xl:col-span-1 space-y-6">
-                            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-                                <h3 class="text-lg font-bold mb-4">Add New Course</h3>
-                                <div class="space-y-4">
-                                    <input type="text" id="new-course-name" placeholder="Course Name (e.g., AP Calculus)" class="form-input w-full">
-                                    <input type="number" id="new-course-credits" placeholder="Credits" value="1.0" step="0.5" class="form-input w-full">
-                                    <select id="new-course-grade" class="form-input w-full">
-                                        <option value="">Select Grade</option>
-                                        <option value="A+">A+</option> <option value="A">A</option> <option value="A-">A-</option>
-                                        <option value="B+">B+</option> <option value="B">B</option> <option value="B-">B-</option>
-                                        <option value="C+">C+</option> <option value="C">C</option> <option value="C-">C-</option>
-                                        <option value="D+">D+</option> <option value="D">D</option> <option value="D-">D-</option>
-                                        <option value="F">F</option>
-                                        <option value="P">P (Pass)</option> <option value="NP">NP (No Pass)</option>
-                                        <option value="I">I (Incomplete)</option> <option value="W">W (Withdrawal)</option>
-                                    </select>
-                                    <button id="add-course-btn" class="w-full btn-primary gradient-bg text-white p-3 rounded-lg font-semibold">Add Course</button>
-                                    <p id="add-course-message" class="text-red-500 text-sm text-center hidden"></p>
-                                </div>
-                            </div>
-                             <div id="gpa-summary" class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 text-center">
-                                <h3 class="text-lg font-bold text-gray-500 dark:text-gray-400">Your Current GPA</h3>
-                                <p id="gpa-display" class="gpa-display text-7xl font-bold my-2">0.00</p>
-                                <p class="text-gray-600 dark:text-gray-300">Total Credits: <span id="gpa-total-credits" class="font-semibold">0.0</span></p>
-                            </div>
-                        </div>
-                        <div id="gpa-table-container" class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 xl:col-span-2">
-                             <h3 class="text-lg font-bold mb-4">Your Courses</h3>
-                             <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                    <thead class="bg-gray-50 dark:bg-gray-700">
-                                        <tr>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Credits</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Points</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weighted</th>
-                                            <th class="relative px-6 py-3"><span class="sr-only">Delete</span></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="courses-list-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                       <tr id="no-courses-row"><td colspan="6" class="p-4 text-center text-gray-500">No courses added yet.</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="extracurriculars-page" class="page-content">
-                     <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Extracurricular Planner</h1>
-                      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 text-center">
-                        <p class="text-gray-500">This feature is coming soon!</p>
-                    </div>
-                </div>
-
-                <div id="calendar-sync-page" class="page-content">
-                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Calendar Sync</h1>
-                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 text-center">
-                        <p class="text-gray-500">This feature is coming soon!</p>
-                    </div>
-                </div>
-
-                <div id="settings-page" class="page-content">
-                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Settings</h1>
-                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div id="grade-tracker-page" class="page-content">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Grade Tracker & GPA Calculator</h1>
+                 <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                    <div class="xl:col-span-1 space-y-6">
                         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-                            <h3 class="text-lg font-bold mb-4">GPA Goal Planner</h3>
+                            <h3 class="text-lg font-bold mb-4">Add New Course</h3>
                             <div class="space-y-4">
-                                <input type="number" id="current-gpa" placeholder="Current GPA" class="form-input w-full">
-                                <input type="number" id="current-gpa-credits" placeholder="Current Total Credits" class="form-input w-full">
-                                <input type="number" id="additional-credits" placeholder="Additional Credits You Will Take" class="form-input w-full">
-                                <input type="number" id="target-gpa" placeholder="Your Target GPA" class="form-input w-full">
-                                <button id="calculate-planning-gpa-btn" class="w-full btn-primary gradient-bg-2 text-white p-3 rounded-lg font-semibold">Calculate</button>
-                            </div>
-                             <div id="planning-gpa-result" class="mt-4 text-center hidden">
-                                <p class="text-gray-500 dark:text-gray-400">GPA Needed on Additional Credits:</p>
-                                <p id="required-gpa-display" class="text-3xl font-bold text-green-500">3.50</p>
-                                <p id="planning-gpa-message" class="text-sm text-yellow-500 mt-2 hidden"></p>
+                                <input type="text" id="new-course-name" placeholder="Course Name (e.g., AP Calculus)" class="form-input w-full">
+                                <input type="number" id="new-course-credits" placeholder="Credits" value="1.0" step="0.5" class="form-input w-full">
+                                <select id="new-course-grade" class="form-input w-full">
+                                    <option value="">Select Grade</option>
+                                    <option value="A+">A+</option> <option value="A">A</option> <option value="A-">A-</option>
+                                    <option value="B+">B+</option> <option value="B">B</option> <option value="B-">B-</option>
+                                    <option value="C+">C+</option> <option value="C">C</option> <option value="C-">C-</option>
+                                    <option value="D+">D+</option> <option value="D">D</option> <option value="D-">D-</option>
+                                    <option value="F">F</option>
+                                    <option value="P">P (Pass)</option> <option value="NP">NP (No Pass)</option>
+                                    <option value="I">I (Incomplete)</option> <option value="W">W (Withdrawal)</option>
+                                </select>
+                                <button id="add-course-btn" class="w-full btn-primary gradient-bg text-white p-3 rounded-lg font-semibold">Add Course</button>
+                                <p id="add-course-message" class="text-red-500 text-sm text-center hidden"></p>
                             </div>
                         </div>
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-                            <h3 class="text-lg font-bold mb-4">Grade Point Values</h3>
-                             <div id="grade-point-settings-loading" class="text-gray-500">Loading settings...</div>
-                            <div id="grade-point-settings" class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                </div>
+                         <div id="gpa-summary" class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 text-center">
+                            <h3 class="text-lg font-bold text-gray-500 dark:text-gray-400">Your Current GPA</h3>
+                            <p id="gpa-display" class="gpa-display text-7xl font-bold my-2">0.00</p>
+                            <p class="text-gray-600 dark:text-gray-300">Total Credits: <span id="gpa-total-credits" class="font-semibold">0.0</span></p>
                         </div>
-                        <div class="bg-red-50 dark:bg-red-900/20 rounded-2xl shadow-lg p-6 md:col-span-2 border border-red-200 dark:border-red-800">
-                             <h3 class="text-lg font-bold text-red-800 dark:text-red-300 mb-2">Danger Zone</h3>
-                             <p class="text-red-700 dark:text-red-400 mb-4">This action is irreversible. It will permanently delete all your saved grades and settings.</p>
-                             <button id="delete-user-data-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Delete All My Data</button>
-                             <p id="delete-user-data-message" class="text-sm text-red-500 mt-2 hidden"></p>
+                    </div>
+                    <div id="gpa-table-container" class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 xl:col-span-2">
+                         <h3 class="text-lg font-bold mb-4">Your Courses</h3>
+                         <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead class="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Credits</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Points</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weighted</th>
+                                        <th class="relative px-6 py-3"><span class="sr-only">Delete</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="courses-list-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                   <tr id="no-courses-row"><td colspan="6" class="p-4 text-center text-gray-500">No courses added yet.</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="mt-auto pt-6">
-                    <button id="logout-btn" class="w-full text-left text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 p-3 rounded-lg">
-                        Logout
-                    </button>
+            <div id="extracurriculars-page" class="page-content">
+                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Extracurricular Planner</h1>
+                  <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 text-center">
+                    <p class="text-gray-500">This feature is coming soon!</p>
                 </div>
-            </main>
-    
+            </div>
 
+            <div id="calendar-sync-page" class="page-content">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Calendar Sync</h1>
+                 <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 text-center">
+                    <p class="text-gray-500">This feature is coming soon!</p>
+                </div>
+            </div>
+
+            <div id="settings-page" class="page-content">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Settings</h1>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+                        <h3 class="text-lg font-bold mb-4">GPA Goal Planner</h3>
+                        <div class="space-y-4">
+                            <input type="number" id="current-gpa" placeholder="Current GPA" class="form-input w-full">
+                            <input type="number" id="current-gpa-credits" placeholder="Current Total Credits" class="form-input w-full">
+                            <input type="number" id="additional-credits" placeholder="Additional Credits You Will Take" class="form-input w-full">
+                            <input type="number" id="target-gpa" placeholder="Your Target GPA" class="form-input w-full">
+                            <button id="calculate-planning-gpa-btn" class="w-full btn-primary gradient-bg-2 text-white p-3 rounded-lg font-semibold">Calculate</button>
+                        </div>
+                         <div id="planning-gpa-result" class="mt-4 text-center hidden">
+                            <p class="text-gray-500 dark:text-gray-400">GPA Needed on Additional Credits:</p>
+                            <p id="required-gpa-display" class="text-3xl font-bold text-green-500">3.50</p>
+                            <p id="planning-gpa-message" class="text-sm text-yellow-500 mt-2 hidden"></p>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+                        <h3 class="text-lg font-bold mb-4">Grade Point Values</h3>
+                         <div id="grade-point-settings-loading" class="text-gray-500">Loading settings...</div>
+                        <div id="grade-point-settings" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
+                    </div>
+                    <div class="bg-red-50 dark:bg-red-900/20 rounded-2xl shadow-lg p-6 md:col-span-2 border border-red-200 dark:border-red-800">
+                         <h3 class="text-lg font-bold text-red-800 dark:text-red-300 mb-2">Danger Zone</h3>
+                         <p class="text-red-700 dark:text-red-400 mb-4">This action is irreversible. It will permanently delete all your saved grades and settings.</p>
+                         <button id="delete-user-data-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Delete All My Data</button>
+                         <p id="delete-user-data-message" class="text-sm text-red-500 mt-2 hidden"></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-auto p-6">
+                 <nav id="main-nav" class="space-y-2">
+                    <a href="#" id="nav-dashboard" class="nav-item flex items-center p-3 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Dashboard</a>
+                    <a href="#" id="nav-time-management" class="nav-item flex items-center p-3 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Time Management</a>
+                    <a href="#" id="nav-grade-tracker" class="nav-item flex items-center p-3 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Grade Tracker</a>
+                    <a href="#" id="nav-extracurriculars" class="nav-item flex items-center p-3 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Extracurriculars</a>
+                    <a href="#" id="nav-calendar-sync" class="nav-item flex items-center p-3 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Calendar Sync</a>
+                    <a href="#" id="nav-settings" class="nav-item flex items-center p-3 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Settings</a>
+                </nav>
+                <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <button id="logout-btn" class="w-full text-left text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 p-3 rounded-lg">Logout</button>
+                </div>
+            </div>
+        </main>
+        </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
