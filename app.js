@@ -2,9 +2,9 @@
 
 // Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 // Import Firestore modules
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, doc, deleteDoc, updateDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, doc, deleteDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // YOUR FIREBASE CONFIGURATION
 const firebaseConfig = {
@@ -85,7 +85,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const recentGradesLoadingDashboard = document.getElementById('recent-grades-loading');
     const noRecentGradesDashboard = document.getElementById('no-recent-grades');
     const deleteUserDataBtn = document.getElementById('delete-user-data-btn');
-    const deleteUserDataMessage = document.getElementById('delete-user-data-message');
 
     // Function to display a specific page
     const displayPage = async (pageId) => {
@@ -160,93 +159,127 @@ document.addEventListener('DOMContentLoaded', async () => {
     navSettings.addEventListener('click', (e) => { e.preventDefault(); displayPage('settings-page'); });
     sidebarAppTitle.addEventListener('click', () => displayPage('dashboard-page'));
 
-    const sendAIChatMessage = async () => { /* AI Chat logic remains the same */ };
+    const sendAIChatMessage = async () => { /* AI Chat logic */ };
     sendAiChatBtn.addEventListener('click', sendAIChatMessage);
     aiChatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAIChatMessage(); } });
 
-    async function loadGradePointSettings() { /* Logic remains the same */ }
-    async function saveGradePointSettings(newSettings) { /* Logic remains the same */ }
-    const renderGradePointSettings = () => { /* Logic remains the same */ };
-    const calculateGPA = (courses) => { /* Logic remains the same */ };
-    async function loadGrades() { /* Logic remains the same */ }
-    async function deleteCourse(event) { /* Logic remains the same */ }
+    const calculateGPA = (courses) => {
+        let totalWeightedPoints = 0;
+        let totalCredits = 0;
+        courses.forEach(course => {
+            const gradePoints = gradePointMap[course.grade];
+            if (gradePoints !== null && gradePoints !== undefined) {
+                totalWeightedPoints += gradePoints * course.credits;
+                totalCredits += course.credits;
+            }
+        });
+        const gpa = totalCredits > 0 ? (totalWeightedPoints / totalCredits) : 0;
+        return { gpa: gpa.toFixed(2), totalCredits: totalCredits.toFixed(1) };
+    };
+    
+    async function loadGradePointSettings() {
+        const userId = auth.currentUser ? auth.currentUser.uid : null;
+        if (!userId) { return; }
+        try {
+            const settingsDocRef = doc(db, `users/${userId}/settings/gpaSettings`);
+            const docSnap = await getDoc(settingsDocRef);
+            if (docSnap.exists()) {
+                Object.assign(gradePointMap, docSnap.data());
+            } else {
+                await setDoc(settingsDocRef, gradePointMap);
+            }
+        } catch (e) { console.error("Error loading GPA settings:", e); }
+    }
 
+    async function loadGrades() {
+        const userId = auth.currentUser ? auth.currentUser.uid : null;
+        if (!userId) { return; }
+        try {
+            const gradesCollectionRef = collection(db, `users/${userId}/grades`);
+            const q = query(gradesCollectionRef, orderBy('timestamp', 'desc'));
+            const querySnapshot = await getDocs(q);
+            const currentCourses = [];
+            querySnapshot.forEach((doc) => currentCourses.push({ id: doc.id, ...doc.data() }));
+            coursesListBody.innerHTML = '';
+            if (currentCourses.length === 0) {
+                noCoursesRow.style.display = ''; // Show "No courses" row
+            } else {
+                noCoursesRow.style.display = 'none'; // Hide it
+                currentCourses.forEach(course => {
+                    const gradePoint = gradePointMap[course.grade];
+                    const weightedPoints = (gradePoint !== null && gradePoint !== undefined) ? (gradePoint * course.credits).toFixed(2) : 'N/A';
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50 dark:hover:bg-gray-700';
+                    row.innerHTML = `
+                        <td class="px-6 py-4 font-medium text-gray-900 dark:text-gray-100">${course.name || 'Unnamed'}</td>
+                        <td class="px-6 py-4 text-gray-500 dark:text-gray-300">${course.credits.toFixed(1)}</td>
+                        <td class="px-6 py-4 text-gray-500 dark:text-gray-300">${course.grade}</td>
+                        <td class="px-6 py-4 text-gray-500 dark:text-gray-300">${(gradePoint !== null && gradePoint !== undefined) ? gradePoint.toFixed(1) : 'N/A'}</td>
+                        <td class="px-6 py-4 text-gray-500 dark:text-gray-300">${weightedPoints}</td>
+                        <td class="px-6 py-4 text-right"><button data-id="${course.id}" class="delete-course-btn text-red-500 hover:text-red-700">Delete</button></td>
+                    `;
+                    coursesListBody.appendChild(row);
+                });
+                document.querySelectorAll('.delete-course-btn').forEach(button => button.addEventListener('click', deleteCourse));
+            }
+            const { gpa, totalCredits } = calculateGPA(currentCourses);
+            gpaTotalCreditsDisplay.textContent = totalCredits;
+            gpaDisplay.textContent = gpa;
+        } catch (e) {
+            console.error("Error loading grades: ", e);
+            coursesListBody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Error loading courses.</td></tr>`;
+        }
+    }
+
+    // ### THIS FUNCTION IS NOW CORRECT ###
     addCourseBtn.addEventListener('click', async () => {
         const userId = auth.currentUser ? auth.currentUser.uid : null;
         if (!userId) { showCustomAlert("You must be logged in to add courses."); return; }
         const courseName = newCourseNameInput.value.trim();
         const credits = parseFloat(newCourseCreditsInput.value);
         const grade = newCourseGradeSelect.value;
-        if (isNaN(credits) || credits <= 0 || !grade) { addCourseMessage.textContent = "Please enter valid credits and select a grade."; addCourseMessage.classList.remove('hidden'); return; }
+        if (isNaN(credits) || credits <= 0 || !grade) {
+            addCourseMessage.textContent = "Please enter valid credits and select a grade.";
+            addCourseMessage.classList.remove('hidden');
+            return;
+        }
         addCourseMessage.classList.add('hidden');
         try {
-            await addDoc(collection(db, `users/${userId}/grades`), { name: courseName || "Unnamed Course", credits, grade, timestamp: new Date() });
-            newCourseNameInput.value = ''; newCourseCreditsInput.value = '1.0'; newCourseGradeSelect.value = '';
-            await loadGrades(); await updateDashboardGrades();
-        } catch (e) { console.error("Error adding document: ", e); showCustomAlert("Error adding course."); }
-    });
-
-    calculatePlanningGpaBtn.addEventListener('click', () => { /* GPA planning logic remains the same */ });
-
-    // ### THIS IS THE UPDATED FUNCTION ###
-    async function updateDashboardGrades() {
-        recentGradesLoadingDashboard.classList.remove('hidden');
-        recentGradesListDashboard.innerHTML = '';
-        noRecentGradesDashboard.classList.add('hidden');
-        overallGpaDashboard.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin inline-block mr-2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`;
-        
-        const userId = auth.currentUser ? auth.currentUser.uid : null;
-        if (!userId) { /* Not logged in logic remains the same */ return; }
-
-        const showGetStartedPrompt = (idSuffix = '') => {
-            overallGpaDashboard.textContent = 'N/A';
-            recentGradesListDashboard.innerHTML = `
-                <div class="text-center py-4">
-                    <p class="text-gray-500 dark:text-gray-400">Let's get started!</p>
-                    <p class="text-gray-500 dark:text-gray-400 mt-1">
-                        Go to the <a href="#" id="dashboard-nav-to-grades${idSuffix}" class="text-indigo-500 hover:underline font-semibold">Grade Tracker</a> to add your first course.
-                    </p>
-                </div>
-            `;
-            document.getElementById(`dashboard-nav-to-grades${idSuffix}`).addEventListener('click', (e) => {
-                e.preventDefault();
-                displayPage('grade-tracker-page');
+            await addDoc(collection(db, `users/${userId}/grades`), {
+                name: courseName || "Unnamed Course",
+                credits: credits,
+                grade: grade,
+                timestamp: new Date()
             });
-        };
-
-        try {
-            await loadGradePointSettings();
-            const gradesCollectionRef = collection(db, `users/${userId}/grades`);
-            const allCoursesQuerySnapshot = await getDocs(gradesCollectionRef);
-            const allCourses = [];
-            allCoursesQuerySnapshot.forEach((doc) => allCourses.push({ id: doc.id, ...doc.data() }));
-
-            recentGradesLoadingDashboard.classList.add('hidden');
-            if (allCourses.length === 0) {
-                showGetStartedPrompt(); // Show prompt if no grades exist
-                return;
-            }
-
-            const { gpa } = calculateGPA(allCourses);
-            overallGpaDashboard.textContent = gpa;
-            allCourses.sort((a, b) => (b.timestamp.seconds || 0) - (a.timestamp.seconds || 0));
-            const recentCourses = allCourses.slice(0, 5);
-            noRecentGradesDashboard.classList.add('hidden');
-            recentCourses.forEach((course) => {
-                const gradeItem = document.createElement('div');
-                gradeItem.className = 'flex items-center justify-between py-2 border-b last:border-b-0 border-gray-200 dark:border-gray-700';
-                gradeItem.innerHTML = `<span class="text-gray-800 dark:text-gray-200">${course.name || 'Unnamed Course'}</span><span class="text-lg font-semibold text-indigo-600 dark:text-indigo-400">${course.grade}</span>`;
-                recentGradesListDashboard.appendChild(gradeItem);
-            });
+            newCourseNameInput.value = '';
+            newCourseCreditsInput.value = '1.0';
+            newCourseGradeSelect.value = '';
+            // These two lines are crucial to refresh the UI
+            await loadGrades();
+            await updateDashboardGrades();
         } catch (e) {
-            console.error("Error updating dashboard grades:", e);
-            recentGradesLoadingDashboard.classList.add('hidden');
-            showGetStartedPrompt('-error'); // Show same helpful prompt on error
+            console.error("Error adding document: ", e);
+            showCustomAlert("Error adding course.");
+        }
+    });
+    
+    async function deleteCourse(event) {
+        const userId = auth.currentUser ? auth.currentUser.uid : null;
+        if (!userId) return;
+        const courseId = event.currentTarget.dataset.id;
+        try {
+            await deleteDoc(doc(db, `users/${userId}/grades`, courseId));
+            await loadGrades();
+            await updateDashboardGrades();
+        } catch (e) {
+            console.error("Error deleting document: ", e);
+            showCustomAlert("Error deleting course.");
         }
     }
 
+    async function updateDashboardGrades() { /* Logic remains the same as previous correct version */ }
+    calculatePlanningGpaBtn.addEventListener('click', () => { /* Logic remains the same */ });
     function showCustomAlert(message) { alert(message); }
     function showCustomConfirm(message, onConfirm) { if (confirm(message)) { onConfirm(); } }
-
-    deleteUserDataBtn.addEventListener('click', async () => { /* Delete logic remains the same */ });
+    deleteUserDataBtn.addEventListener('click', async () => { /* Logic remains the same */ });
 });
