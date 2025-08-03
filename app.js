@@ -653,11 +653,86 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Function to update Recent Grades and Overall GPA on Dashboard
-    async function updateDashboardGrades() {
-        recentGradesLoadingDashboard.classList.remove('hidden');
-        recentGradesListDashboard.innerHTML = '';
+    // Replace the old updateDashboardGrades function with this new one
+
+async function updateDashboardGrades() {
+    recentGradesLoadingDashboard.classList.remove('hidden');
+    recentGradesListDashboard.innerHTML = '';
+    noRecentGradesDashboard.classList.add('hidden');
+    overallGpaDashboard.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin inline-block mr-2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`;
+
+    const userId = auth.currentUser ? auth.currentUser.uid : null;
+    if (!userId) {
+        recentGradesLoadingDashboard.classList.add('hidden');
+        overallGpaDashboard.textContent = 'N/A';
+        recentGradesListDashboard.innerHTML = `<p class="text-center text-gray-500">Please log in to see your grades.</p>`;
+        return;
+    }
+
+    try {
+        // Ensure gradePointMap is loaded before calculating GPA
+        await loadGradePointSettings();
+
+        const gradesCollectionRef = collection(db, `users/${userId}/grades`);
+        const allCoursesQuerySnapshot = await getDocs(gradesCollectionRef);
+
+        const allCourses = [];
+        allCoursesQuerySnapshot.forEach((doc) => {
+            allCourses.push({ id: doc.id, ...doc.data() });
+        });
+
+        recentGradesLoadingDashboard.classList.add('hidden');
+
+        // NEW: Check if there are no courses and show a helpful prompt
+        if (allCourses.length === 0) {
+            overallGpaDashboard.textContent = 'N/A';
+            recentGradesListDashboard.innerHTML = `
+                <div class="text-center py-4">
+                    <p class="text-gray-500 dark:text-gray-400">Let's get started!</p>
+                    <p class="text-gray-500 dark:text-gray-400 mt-1">
+                        Go to the
+                        <a href="#" id="dashboard-nav-to-grades" class="text-indigo-500 hover:underline font-semibold">Grade Tracker</a>
+                        to add your first course.
+                    </p>
+                </div>
+            `;
+            // Add an event listener for our new link
+            document.getElementById('dashboard-nav-to-grades').addEventListener('click', (e) => {
+                e.preventDefault();
+                displayPage('grade-tracker-page');
+            });
+            return; // Stop the function here
+        }
+
+        // --- Existing logic runs if courses ARE found ---
+
+        // Calculate and display overall GPA
+        const { gpa } = calculateGPA(allCourses);
+        overallGpaDashboard.textContent = gpa;
+
+        // Sort courses by timestamp to get the 5 most recent
+        allCourses.sort((a, b) => (b.timestamp.seconds || 0) - (a.timestamp.seconds || 0));
+        const recentCourses = allCourses.slice(0, 5);
+        
         noRecentGradesDashboard.classList.add('hidden');
-        overallGpaDashboard.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2 animate-spin inline-block mr-2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`;
+        recentCourses.forEach((course) => {
+            const gradeItem = document.createElement('div');
+            gradeItem.className = 'flex items-center justify-between py-2 border-b last:border-b-0 border-gray-200 dark:border-gray-700';
+            gradeItem.innerHTML = `
+                <span class="text-gray-800 dark:text-gray-200">${course.name || 'Unnamed Course'}</span>
+                <span class="text-lg font-semibold text-indigo-600 dark:text-indigo-400">${course.grade}</span>
+            `;
+            recentGradesListDashboard.appendChild(gradeItem);
+        });
+
+    } catch (e) {
+        // This will now only catch actual server/network errors
+        console.error("Error updating dashboard grades:", e);
+        recentGradesLoadingDashboard.classList.add('hidden');
+        overallGpaDashboard.textContent = 'Error';
+        recentGradesListDashboard.innerHTML = `<p class="text-red-600 dark:text-red-400 text-center">Could not load grade data. Please try again later.</p>`;
+    }
+}
 
 
         const userId = auth.currentUser ? auth.currentUser.uid : null;
