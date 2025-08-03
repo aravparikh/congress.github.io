@@ -476,7 +476,164 @@
                         <h1 class="text-xl font-bold text-gray-900 dark:text-white">Student Planner</h1>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Academic Excellence</p>
                     </div>
-    <!-- Link to external JavaScript file -->
-    <script type="module" src="app.js"></script>
-</body>
+                    </div>
+                </div>
+            </aside>  <script type="module" src="app.js"></script>
+        </div> </div> </body>
 </html>
+<main class="flex-1 p-6 md:p-8 overflow-y-auto">
+                <div id="dashboard-page" class="page-content">
+                    <div class="mb-8">
+                        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+                        <p class="text-gray-500 dark:text-gray-400 mt-1">Welcome back! Here's a summary of your academic progress.</p>
+                        <p id="user-id-display" class="text-xs text-gray-400 dark:text-gray-500 mt-2">Loading user...</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-semibold text-gray-500 dark:text-gray-400">Overall GPA</h3>
+                                <p id="overall-gpa" class="text-5xl font-bold text-indigo-600 dark:text-indigo-400 mt-2">...</p>
+                            </div>
+                            <p class="text-sm text-gray-400 mt-4">Calculated from all your entered courses.</p>
+                        </div>
+
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 lg:col-span-2">
+                            <h3 class="font-semibold text-gray-500 dark:text-gray-400 mb-4">Recent Grades</h3>
+                            <div id="recent-grades-loading" class="text-center py-4">
+                                <p class="text-gray-500 dark:text-gray-400">Loading recent grades...</p>
+                            </div>
+                            <div id="recent-grades-list" class="space-y-2">
+                                </div>
+                            <div id="no-recent-grades" class="text-center py-4 hidden">
+                                <p class="text-gray-500 dark:text-gray-400">No grades have been added yet.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="time-management-page" class="page-content">
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">AI Time Management</h1>
+                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+                        <div class="flex flex-col h-[60vh]">
+                            <div id="ai-chat-output" class="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-700 rounded-t-lg flex flex-col-reverse">
+                                </div>
+                            <div class="p-4 border-t border-gray-200 dark:border-gray-600">
+                                <div id="ai-chat-error" class="text-red-500 text-sm mb-2 hidden"></div>
+                                <div class="flex items-center space-x-2">
+                                    <textarea id="ai-chat-input" class="form-input w-full p-2" placeholder="Ask for a study schedule, e.g., 'Help me plan my week for finals'"></textarea>
+                                    <button id="send-ai-chat-btn" class="p-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Send</button>
+                                    <div id="ai-chat-loading-spinner" class="spinner hidden"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="grade-tracker-page" class="page-content">
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Grade Tracker & GPA Calculator</h1>
+                     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div class="xl:col-span-1 space-y-6">
+                            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+                                <h3 class="text-lg font-bold mb-4">Add New Course</h3>
+                                <div class="space-y-4">
+                                    <input type="text" id="new-course-name" placeholder="Course Name (e.g., AP Calculus)" class="form-input w-full">
+                                    <input type="number" id="new-course-credits" placeholder="Credits" value="1.0" step="0.5" class="form-input w-full">
+                                    <select id="new-course-grade" class="form-input w-full">
+                                        <option value="">Select Grade</option>
+                                        <option value="A+">A+</option> <option value="A">A</option> <option value="A-">A-</option>
+                                        <option value="B+">B+</option> <option value="B">B</option> <option value="B-">B-</option>
+                                        <option value="C+">C+</option> <option value="C">C</option> <option value="C-">C-</option>
+                                        <option value="D+">D+</option> <option value="D">D</option> <option value="D-">D-</option>
+                                        <option value="F">F</option>
+                                        <option value="P">P (Pass)</option> <option value="NP">NP (No Pass)</option>
+                                        <option value="I">I (Incomplete)</option> <option value="W">W (Withdrawal)</option>
+                                    </select>
+                                    <button id="add-course-btn" class="w-full btn-primary gradient-bg text-white p-3 rounded-lg font-semibold">Add Course</button>
+                                    <p id="add-course-message" class="text-red-500 text-sm text-center hidden"></p>
+                                </div>
+                            </div>
+                             <div id="gpa-summary" class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 text-center">
+                                <h3 class="text-lg font-bold text-gray-500 dark:text-gray-400">Your Current GPA</h3>
+                                <p id="gpa-display" class="gpa-display text-7xl font-bold my-2">0.00</p>
+                                <p class="text-gray-600 dark:text-gray-300">Total Credits: <span id="gpa-total-credits" class="font-semibold">0.0</span></p>
+                            </div>
+                        </div>
+                        <div id="gpa-table-container" class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 xl:col-span-2">
+                             <h3 class="text-lg font-bold mb-4">Your Courses</h3>
+                             <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                    <thead class="bg-gray-50 dark:bg-gray-700">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Credits</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Points</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weighted</th>
+                                            <th class="relative px-6 py-3"><span class="sr-only">Delete</span></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="courses-list-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                       <tr id="no-courses-row"><td colspan="6" class="p-4 text-center text-gray-500">No courses added yet.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="extracurriculars-page" class="page-content">
+                     <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Extracurricular Planner</h1>
+                      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 text-center">
+                        <p class="text-gray-500">This feature is coming soon!</p>
+                    </div>
+                </div>
+
+                <div id="calendar-sync-page" class="page-content">
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Calendar Sync</h1>
+                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 text-center">
+                        <p class="text-gray-500">This feature is coming soon!</p>
+                    </div>
+                </div>
+
+                <div id="settings-page" class="page-content">
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Settings</h1>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+                            <h3 class="text-lg font-bold mb-4">GPA Goal Planner</h3>
+                            <div class="space-y-4">
+                                <input type="number" id="current-gpa" placeholder="Current GPA" class="form-input w-full">
+                                <input type="number" id="current-gpa-credits" placeholder="Current Total Credits" class="form-input w-full">
+                                <input type="number" id="additional-credits" placeholder="Additional Credits You Will Take" class="form-input w-full">
+                                <input type="number" id="target-gpa" placeholder="Your Target GPA" class="form-input w-full">
+                                <button id="calculate-planning-gpa-btn" class="w-full btn-primary gradient-bg-2 text-white p-3 rounded-lg font-semibold">Calculate</button>
+                            </div>
+                             <div id="planning-gpa-result" class="mt-4 text-center hidden">
+                                <p class="text-gray-500 dark:text-gray-400">GPA Needed on Additional Credits:</p>
+                                <p id="required-gpa-display" class="text-3xl font-bold text-green-500">3.50</p>
+                                <p id="planning-gpa-message" class="text-sm text-yellow-500 mt-2 hidden"></p>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+                            <h3 class="text-lg font-bold mb-4">Grade Point Values</h3>
+                             <div id="grade-point-settings-loading" class="text-gray-500">Loading settings...</div>
+                            <div id="grade-point-settings" class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                </div>
+                        </div>
+                        <div class="bg-red-50 dark:bg-red-900/20 rounded-2xl shadow-lg p-6 md:col-span-2 border border-red-200 dark:border-red-800">
+                             <h3 class="text-lg font-bold text-red-800 dark:text-red-300 mb-2">Danger Zone</h3>
+                             <p class="text-red-700 dark:text-red-400 mb-4">This action is irreversible. It will permanently delete all your saved grades and settings.</p>
+                             <button id="delete-user-data-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Delete All My Data</button>
+                             <p id="delete-user-data-message" class="text-sm text-red-500 mt-2 hidden"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-auto pt-6">
+                    <button id="logout-btn" class="w-full text-left text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 p-3 rounded-lg">
+                        Logout
+                    </button>
+                </div>
+            </main>
+    
+
