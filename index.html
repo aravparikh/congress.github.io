@@ -512,6 +512,21 @@
                                 <p id="add-course-message" class="text-red-500 text-sm text-center hidden"></p>
                             </div>
                         </div>
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+                            <h3 class="text-lg font-bold mb-4">GPA Goal Planner</h3>
+                            <div class="space-y-4">
+                                <input type="number" id="current-gpa" placeholder="Current GPA" class="form-input w-full">
+                                <input type="number" id="current-gpa-credits" placeholder="Current Total Credits" class="form-input w-full">
+                                <input type="number" id="additional-credits" placeholder="Additional Credits You Will Take" class="form-input w-full">
+                                <input type="number" id="target-gpa" placeholder="Your Target GPA" class="form-input w-full">
+                                <button id="calculate-planning-gpa-btn" class="w-full btn-primary gradient-bg-2 text-white p-3 rounded-lg font-semibold">Calculate</button>
+                            </div>
+                             <div id="planning-gpa-result" class="mt-4 text-center hidden">
+                                <p class="text-gray-500 dark:text-gray-400">GPA Needed on Additional Credits:</p>
+                                <p id="required-gpa-display" class="text-3xl font-bold text-green-500">3.50</p>
+                                <p id="planning-gpa-message" class="text-sm text-yellow-500 mt-2 hidden"></p>
+                            </div>
+                        </div>
                          <div id="gpa-summary" class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 text-center">
                             <h3 class="text-lg font-bold text-gray-500 dark:text-gray-400">Your Current GPA</h3>
                             <p id="gpa-display" class="gpa-display text-7xl font-bold my-2">0.00</p>
@@ -558,21 +573,6 @@
             <div id="settings-page" class="page-content">
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Settings</h1>
                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-                        <h3 class="text-lg font-bold mb-4">GPA Goal Planner</h3>
-                        <div class="space-y-4">
-                            <input type="number" id="current-gpa" placeholder="Current GPA" class="form-input w-full">
-                            <input type="number" id="current-gpa-credits" placeholder="Current Total Credits" class="form-input w-full">
-                            <input type="number" id="additional-credits" placeholder="Additional Credits You Will Take" class="form-input w-full">
-                            <input type="number" id="target-gpa" placeholder="Your Target GPA" class="form-input w-full">
-                            <button id="calculate-planning-gpa-btn" class="w-full btn-primary gradient-bg-2 text-white p-3 rounded-lg font-semibold">Calculate</button>
-                        </div>
-                         <div id="planning-gpa-result" class="mt-4 text-center hidden">
-                            <p class="text-gray-500 dark:text-gray-400">GPA Needed on Additional Credits:</p>
-                            <p id="required-gpa-display" class="text-3xl font-bold text-green-500">3.50</p>
-                            <p id="planning-gpa-message" class="text-sm text-yellow-500 mt-2 hidden"></p>
-                        </div>
-                    </div>
                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
                         <h3 class="text-lg font-bold mb-4">Grade Point Values</h3>
                          <div id="grade-point-settings-loading" class="text-gray-500">Loading settings...</div>
