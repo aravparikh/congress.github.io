@@ -95,6 +95,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             await loadGrades();
         } else if (pageId === 'dashboard-page') {
             await updateDashboardGrades();
+        } else if (pageId === 'settings-page') {
+            await loadGradePointSettings();
         }
         document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
         const activeNavItem = document.getElementById(`nav-${pageId.replace('-page', '')}`);
@@ -119,8 +121,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             landingPage.classList.add('hidden');
             mainAppLayout.classList.remove('hidden');
             userIdDisplay.textContent = `User ID: ${user.uid}`;
-            await loadGradePointSettings();
-            await updateDashboardGrades();
             displayPage('dashboard-page');
         } else {
             landingPage.classList.remove('hidden');
@@ -159,10 +159,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     navSettings.addEventListener('click', (e) => { e.preventDefault(); displayPage('settings-page'); });
     sidebarAppTitle.addEventListener('click', () => displayPage('dashboard-page'));
 
-    const sendAIChatMessage = async () => { /* AI Chat logic */ };
-    sendAiChatBtn.addEventListener('click', sendAIChatMessage);
-    aiChatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAIChatMessage(); } });
-
+    // --- GPA & Grade Functions ---
     const calculateGPA = (courses) => {
         let totalWeightedPoints = 0;
         let totalCredits = 0;
@@ -176,10 +173,50 @@ document.addEventListener('DOMContentLoaded', async () => {
         const gpa = totalCredits > 0 ? (totalWeightedPoints / totalCredits) : 0;
         return { gpa: gpa.toFixed(2), totalCredits: totalCredits.toFixed(1) };
     };
+
+    const renderGradePointSettings = () => {
+        gradePointSettingsContainer.innerHTML = '';
+        gradePointSettingsLoading.classList.add('hidden');
+        for (const grade in gradePointMap) {
+            if (gradePointMap[grade] !== null) {
+                const settingDiv = document.createElement('div');
+                settingDiv.className = 'flex items-center space-x-2';
+                settingDiv.innerHTML = `
+                    <label for="gp-${grade}" class="text-gray-700 dark:text-gray-300 font-medium">${grade}:</label>
+                    <input type="number" id="gp-${grade}" class="form-input text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 w-full p-2 rounded-lg" step="0.1" value="${gradePointMap[grade].toFixed(1)}">
+                `;
+                gradePointSettingsContainer.appendChild(settingDiv);
+                const inputElement = settingDiv.querySelector(`#gp-${grade}`);
+                inputElement.addEventListener('input', (e) => {
+                    const newPoints = parseFloat(e.target.value);
+                    if (!isNaN(newPoints)) {
+                        gradePointMap[grade] = newPoints;
+                        saveGradePointSettings(gradePointMap);
+                        loadGrades();
+                    }
+                });
+            }
+        }
+    };
+
+    async function saveGradePointSettings(newSettings) {
+        const userId = auth.currentUser ? auth.currentUser.uid : null;
+        if (!userId) return;
+        try {
+            const settingsDocRef = doc(db, `users/${userId}/settings/gpaSettings`);
+            await setDoc(settingsDocRef, newSettings);
+        } catch (e) {
+            console.error("Error saving GPA settings:", e);
+        }
+    }
     
     async function loadGradePointSettings() {
         const userId = auth.currentUser ? auth.currentUser.uid : null;
-        if (!userId) { return; }
+        if (!userId) {
+            renderGradePointSettings();
+            return;
+        }
+        gradePointSettingsLoading.classList.remove('hidden');
         try {
             const settingsDocRef = doc(db, `users/${userId}/settings/gpaSettings`);
             const docSnap = await getDoc(settingsDocRef);
@@ -188,12 +225,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else {
                 await setDoc(settingsDocRef, gradePointMap);
             }
-        } catch (e) { console.error("Error loading GPA settings:", e); }
+        } catch (e) {
+            console.error("Error loading GPA settings:", e);
+        } finally {
+            renderGradePointSettings();
+        }
     }
 
     async function loadGrades() {
         const userId = auth.currentUser ? auth.currentUser.uid : null;
-        if (!userId) { return; }
+        if (!userId) return;
         try {
             const gradesCollectionRef = collection(db, `users/${userId}/grades`);
             const q = query(gradesCollectionRef, orderBy('timestamp', 'desc'));
@@ -202,9 +243,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             querySnapshot.forEach((doc) => currentCourses.push({ id: doc.id, ...doc.data() }));
             coursesListBody.innerHTML = '';
             if (currentCourses.length === 0) {
-                noCoursesRow.style.display = ''; // Show "No courses" row
+                noCoursesRow.style.display = '';
             } else {
-                noCoursesRow.style.display = 'none'; // Hide it
+                noCoursesRow.style.display = 'none';
                 currentCourses.forEach(course => {
                     const gradePoint = gradePointMap[course.grade];
                     const weightedPoints = (gradePoint !== null && gradePoint !== undefined) ? (gradePoint * course.credits).toFixed(2) : 'N/A';
@@ -231,10 +272,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // ### THIS FUNCTION IS NOW CORRECT ###
+    async function deleteCourse(event) {
+        const userId = auth.currentUser ? auth.currentUser.uid : null;
+        if (!userId) return;
+        const courseId = event.currentTarget.dataset.id;
+        if (confirm("Are you sure you want to delete this course?")) {
+            try {
+                await deleteDoc(doc(db, `users/${userId}/grades`, courseId));
+                await loadGrades();
+                await updateDashboardGrades();
+            } catch (e) {
+                console.error("Error deleting document: ", e);
+            }
+        }
+    }
+
     addCourseBtn.addEventListener('click', async () => {
         const userId = auth.currentUser ? auth.currentUser.uid : null;
-        if (!userId) { showCustomAlert("You must be logged in to add courses."); return; }
+        if (!userId) { return; }
         const courseName = newCourseNameInput.value.trim();
         const credits = parseFloat(newCourseCreditsInput.value);
         const grade = newCourseGradeSelect.value;
@@ -245,41 +300,49 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         addCourseMessage.classList.add('hidden');
         try {
-            await addDoc(collection(db, `users/${userId}/grades`), {
-                name: courseName || "Unnamed Course",
-                credits: credits,
-                grade: grade,
-                timestamp: new Date()
-            });
-            newCourseNameInput.value = '';
-            newCourseCreditsInput.value = '1.0';
-            newCourseGradeSelect.value = '';
-            // These two lines are crucial to refresh the UI
+            await addDoc(collection(db, `users/${userId}/grades`), { name: courseName || "Unnamed Course", credits, grade, timestamp: new Date() });
+            newCourseNameInput.value = ''; newCourseCreditsInput.value = '1.0'; newCourseGradeSelect.value = '';
             await loadGrades();
             await updateDashboardGrades();
-        } catch (e) {
-            console.error("Error adding document: ", e);
-            showCustomAlert("Error adding course.");
-        }
+        } catch (e) { console.error("Error adding document: ", e); }
     });
-    
-    async function deleteCourse(event) {
+
+    async function updateDashboardGrades() {
+        recentGradesLoadingDashboard.style.display = 'block';
+        recentGradesListDashboard.innerHTML = '';
+        overallGpaDashboard.textContent = '...';
         const userId = auth.currentUser ? auth.currentUser.uid : null;
-        if (!userId) return;
-        const courseId = event.currentTarget.dataset.id;
+        if (!userId) { return; }
         try {
-            await deleteDoc(doc(db, `users/${userId}/grades`, courseId));
-            await loadGrades();
-            await updateDashboardGrades();
+            await loadGradePointSettings();
+            const gradesCollectionRef = collection(db, `users/${userId}/grades`);
+            const allCoursesQuerySnapshot = await getDocs(gradesCollectionRef);
+            const allCourses = [];
+            allCoursesQuerySnapshot.forEach((doc) => allCourses.push({ id: doc.id, ...doc.data() }));
+            recentGradesLoadingDashboard.style.display = 'none';
+            if (allCourses.length === 0) {
+                overallGpaDashboard.textContent = 'N/A';
+                recentGradesListDashboard.innerHTML = `<p class="text-center text-gray-500">Go to the Grade Tracker to add courses.</p>`;
+                return;
+            }
+            const { gpa } = calculateGPA(allCourses);
+            overallGpaDashboard.textContent = gpa;
+            allCourses.sort((a, b) => (b.timestamp.seconds || 0) - (a.timestamp.seconds || 0));
+            const recentCourses = allCourses.slice(0, 5);
+            recentCourses.forEach((course) => {
+                const gradeItem = document.createElement('div');
+                gradeItem.className = 'flex items-center justify-between py-2 border-b last:border-b-0 border-gray-200 dark:border-gray-700';
+                gradeItem.innerHTML = `<span class="text-gray-800 dark:text-gray-200">${course.name || 'Unnamed Course'}</span><span class="text-lg font-semibold text-indigo-600 dark:text-indigo-400">${course.grade}</span>`;
+                recentGradesListDashboard.appendChild(gradeItem);
+            });
         } catch (e) {
-            console.error("Error deleting document: ", e);
-            showCustomAlert("Error deleting course.");
+            console.error("Error updating dashboard grades:", e);
+            recentGradesLoadingDashboard.style.display = 'none';
+            overallGpaDashboard.textContent = 'Error';
+            recentGradesListDashboard.innerHTML = `<p class="text-red-500 text-center">Could not load grade data.</p>`;
         }
     }
-
-    async function updateDashboardGrades() { /* Logic remains the same as previous correct version */ }
-    calculatePlanningGpaBtn.addEventListener('click', () => { /* Logic remains the same */ });
-    function showCustomAlert(message) { alert(message); }
-    function showCustomConfirm(message, onConfirm) { if (confirm(message)) { onConfirm(); } }
-    deleteUserDataBtn.addEventListener('click', async () => { /* Logic remains the same */ });
+    
+    calculatePlanningGpaBtn.addEventListener('click', () => { /* GPA planning logic */ });
+    deleteUserDataBtn.addEventListener('click', async () => { /* Delete logic */ });
 });
