@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <input type="number" id="gp-${grade}" class="form-input text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 w-full p-2 rounded-lg" step="0.1" value="${gradePointMap[grade].toFixed(1)}">
                 `;
                 gradePointSettingsContainer.appendChild(settingDiv);
-                const inputElement = settingDiv.querySelector(`#gp-${grade}`);
+                const inputElement = document.getElementById(`gp-${grade}`);
                 inputElement.addEventListener('input', (e) => {
                     const newPoints = parseFloat(e.target.value);
                     if (!isNaN(newPoints)) {
