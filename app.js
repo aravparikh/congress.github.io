@@ -346,3 +346,185 @@ document.addEventListener('DOMContentLoaded', async () => {
     calculatePlanningGpaBtn.addEventListener('click', () => { /* GPA planning logic */ });
     deleteUserDataBtn.addEventListener('click', async () => { /* Delete logic */ });
 });
+let chatHistory = [];
+let lastScheduleText = "";
+
+const addChatMessage = (message, isUser = false) => {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `mb-4 flex ${isUser ? 'justify-end' : 'justify-start'} animate-fadeIn`;
+    
+    const bubbleDiv = document.createElement('div');
+    bubbleDiv.className = `max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
+        isUser 
+            ? 'chat-bubble-user text-white shadow-lg' 
+            : 'chat-bubble-ai text-gray-800 dark:text-gray-100 shadow-md border border-gray-200 dark:border-gray-600'
+    }`;
+    
+    if (isUser) {
+        bubbleDiv.innerHTML = `<p class="text-sm font-medium">${escapeHtml(message)}</p>`;
+    } else {
+        const formattedMessage = formatAIResponse(message);
+        bubbleDiv.innerHTML = formattedMessage;
+    }
+    
+    messageDiv.appendChild(bubbleDiv);
+    aiChatOutput.appendChild(messageDiv);
+    
+    // Smooth scroll to show new message
+    setTimeout(() => {
+        aiChatOutput.scrollTop = aiChatOutput.scrollHeight;
+    }, 100);
+};
+
+const escapeHtml = (text) => {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, (m) => map[m]);
+};
+
+const formatAIResponse = (text) => {
+    // Convert line breaks and format the response for better readability
+    let formatted = escapeHtml(text)
+        .replace(/\n\n/g, '</p><p class="mb-3">')
+        .replace(/\n/g, '<br>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-indigo-700 dark:text-indigo-300">$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em class="italic text-gray-600 dark:text-gray-400">$1</em>');
+    
+    // Wrap in paragraph tags
+    formatted = `<div class="prose prose-sm max-w-none text-gray-700 dark:text-gray-300"><p class="mb-3">${formatted}</p></div>`;
+    
+    // Format time blocks better
+    formatted = formatted.replace(/(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})/g, 
+        '<span class="inline-block bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-2 py-1 rounded-md text-xs font-mono font-semibold mr-1 mb-1">$1–$2</span>');
+    
+    // Format day headers
+    formatted = formatted.replace(/(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)(:|\s*-)/g, 
+        '<h4 class="font-bold text-lg text-indigo-600 dark:text-indigo-400 mt-4 mb-2 flex items-center"><svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>$1</h4>');
+    
+    return formatted;
+};
+
+const sendChatMessage = async () => {
+    const message = aiChatInput.value.trim();
+    if (!message) return;
+    
+    // Clear input and show user message
+    aiChatInput.value = '';
+    aiChatInput.style.height = 'auto';
+    addChatMessage(message, true);
+    chatHistory.push({ role: 'user', content: message });
+    
+    // Show loading state
+    aiChatLoadingSpinner.classList.remove('hidden');
+    sendAiChatBtn.disabled = true;
+    sendAiChatBtn.innerHTML = '<div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>';
+    aiChatError.classList.add('hidden');
+    
+    try {
+        const response = await fetch('https://student-planner-backend.onrender.com/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                user_text: message,
+                last_schedule_text: lastScheduleText
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status}. Please try again.`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        // Store the schedule text for future reference
+        if (data.last_schedule_text) {
+            lastScheduleText = data.last_schedule_text;
+        }
+        
+        // Add AI response
+        addChatMessage(data.response, false);
+        chatHistory.push({ role: 'assistant', content: data.response });
+        
+    } catch (error) {
+        console.error('Error sending chat message:', error);
+        const errorText = `${error.message} Please try again.`;
+        document.getElementById('ai-chat-error-text').textContent = errorText;
+        aiChatError.classList.remove('hidden');
+        
+        // Add error message to chat
+        addChatMessage('Sorry, I encountered an error. Please try again in a moment.', false);
+    } finally {
+        // Reset loading state
+        aiChatLoadingSpinner.classList.add('hidden');
+        sendAiChatBtn.disabled = false;
+        sendAiChatBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>';
+        aiChatInput.focus();
+    }
+};
+
+const initializeTimeManagement = () => {
+    if (aiChatOutput.children.length === 0) {
+        setTimeout(() => {
+            addChatMessage("🎯 Hi there! I'm your AI scheduling assistant. I can help you create personalized study schedules that work with your lifestyle.\n\n💡 **To get started, try saying:**\n• 'Generate a daily schedule'\n• 'I need help balancing homework and sleep'\n• 'Create a weekly study plan'\n\nJust tell me about your routine, classes, and goals!", false);
+        }, 500);
+    }
+};
+
+// Update your existing displayPage function to include time management initialization
+const originalDisplayPage = displayPage; // Store reference to existing function
+displayPage = async (pageId) => {
+    document.querySelectorAll('.page-content').forEach(page => page.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+    
+    if (pageId === 'grade-tracker-page') {
+        await loadGradePointSettings();
+        await loadGrades();
+    } else if (pageId === 'dashboard-page') {
+        await updateDashboardGrades();
+    } else if (pageId === 'settings-page') {
+        await loadGradePointSettings();
+    } else if (pageId === 'time-management-page') {
+        initializeTimeManagement();
+    }
+    
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    const activeNavItem = document.getElementById(`nav-${pageId.replace('-page', '')}`);
+    if (activeNavItem) activeNavItem.classList.add('active');
+};
+
+// Add these event listeners to your existing event listeners section
+sendAiChatBtn.addEventListener('click', sendChatMessage);
+
+aiChatInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendChatMessage();
+    }
+});
+
+// Auto-resize textarea
+aiChatInput.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+// Add CSS animation for fade in effect
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeIn {
+        animation: fadeIn 0.3s ease-out;
