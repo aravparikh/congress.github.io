@@ -1,6 +1,3 @@
-// app.js
-
-// Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 // Import Firestore modules
@@ -85,6 +82,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     const recentGradesLoadingDashboard = document.getElementById('recent-grades-loading');
     const noRecentGradesDashboard = document.getElementById('no-recent-grades');
     const deleteUserDataBtn = document.getElementById('delete-user-data-btn');
+    const connectCalendarBtn = document.getElementById('connect-calendar-btn');
+    const calendarBtnText = document.getElementById('calendar-btn-text');
+    const calendarBtnSpinner = document.getElementById('calendar-btn-spinner');
+    const calendarStatus = document.getElementById('calendar-status');
+
+    // Check for calendar connection status from URL on page load
+    const checkCalendarStatus = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const calendarStatusParam = urlParams.get('calendar_status');
+
+        if (calendarStatusParam === 'connected') {
+            // If connection is successful, hide the button and show the status message
+            connectCalendarBtn.classList.add('hidden');
+            calendarStatus.classList.remove('hidden');
+        }
+    };
+    checkCalendarStatus();
 
     // Function to display a specific page
     const displayPage = async (pageId) => {
@@ -158,6 +172,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     navCalendarSync.addEventListener('click', (e) => { e.preventDefault(); displayPage('calendar-sync-page'); });
     navSettings.addEventListener('click', (e) => { e.preventDefault(); displayPage('settings-page'); });
     sidebarAppTitle.addEventListener('click', () => displayPage('dashboard-page'));
+
+    // --- Calendar Connect Button ---
+    connectCalendarBtn.addEventListener('click', () => {
+        // Update button state to show it's working
+        calendarBtnText.textContent = 'Connecting...';
+        calendarBtnSpinner.classList.remove('hidden');
+        connectCalendarBtn.disabled = true;
+        connectCalendarBtn.classList.add('connecting');
+
+        // Redirect to the backend authorization endpoint
+        window.location.href = 'https://student-planner-backend.onrender.com/authorize';
+    });
 
     // --- GPA & Grade Functions ---
     const calculateGPA = (courses) => {
@@ -528,3 +554,7 @@ style.textContent = `
     }
     .animate-fadeIn {
         animation: fadeIn 0.3s ease-out;
+    }
+`;
+document.head.appendChild(style);
+
