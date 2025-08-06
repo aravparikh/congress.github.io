@@ -27,6 +27,9 @@
         .gradient-bg-4 {
             background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
         }
+        .gradient-bg-5 {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ffa726 100%);
+        }
         /* Glass morphism effect */
         .glass {
             background: rgba(255, 255, 255, 0.1);
@@ -52,6 +55,16 @@
         }
         .pulse-glow {
             animation: pulse-glow 2s infinite;
+        }
+        /* Shimmer animation */
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
         }
         /* Custom scrollbar */
         ::-webkit-scrollbar {
@@ -174,6 +187,38 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+        /* Calendar button specific styles */
+        .calendar-btn {
+            position: relative;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ffa726 100%);
+            transform: perspective(1px) translateZ(0);
+            box-shadow: 0 0 1px rgba(0, 0, 0, 0);
+        }
+        .calendar-btn:hover {
+            animation: pulse 0.6s ease-in-out;
+            box-shadow: 0 10px 25px rgba(255, 107, 107, 0.4);
+        }
+        .calendar-btn.connecting {
+            background: linear-gradient(45deg, #ff6b6b, #ffa726, #ff6b6b, #ffa726);
+            background-size: 300% 300%;
+            animation: gradient-flow 2s ease infinite;
+        }
+        @keyframes gradient-flow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        /* Connected state */
+        .calendar-connected {
+            background: linear-gradient(135deg, #10b981, #059669) !important;
+        }
+        .calendar-connected:hover {
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
         }
         /* Responsive adjustments */
         @media (max-width: 768px) {
@@ -336,8 +381,32 @@
             </div>
 
             <div id="time-management-page" class="page-content">
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2 text-center">AI Time Management</h1>
-                <p class="text-center text-gray-500 dark:text-gray-400 mb-8">Ask for study plans, essay outlines, and more.</p>
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">AI Time Management</h1>
+                    <p class="text-gray-500 dark:text-gray-400 mb-6">Ask for study plans, essay outlines, and more.</p>
+                    
+                    <!-- Connect Calendar Button -->
+                    <div class="mb-6">
+                        <button id="connect-calendar-btn" class="calendar-btn btn-primary px-8 py-4 text-white rounded-full text-lg font-bold shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center mx-auto">
+                            <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+                            </svg>
+                            <span id="calendar-btn-text">📅 Connect Calendar</span>
+                            <div id="calendar-btn-spinner" class="ml-3 w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin hidden"></div>
+                        </button>
+                        
+                        <!-- Calendar Status Display -->
+                        <div id="calendar-status" class="mt-4 hidden">
+                            <div class="inline-flex items-center px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-full">
+                                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                Calendar Connected!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="max-w-4xl mx-auto">
                      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg flex flex-col h-[65vh]">
                         <div id="ai-chat-output" class="flex-1 overflow-y-auto p-6 space-y-4 flex flex-col-reverse">
@@ -346,10 +415,16 @@
                             </div>
                         </div>
                         <div class="p-4 border-t border-gray-200 dark:border-gray-600">
-                            <div id="ai-chat-error" class="text-red-500 text-sm mb-2 hidden"></div>
+                            <div id="ai-chat-error" class="text-red-500 text-sm mb-2 hidden">
+                                <span id="ai-chat-error-text"></span>
+                            </div>
                             <div class="flex items-center space-x-3">
                                 <textarea id="ai-chat-input" class="form-input flex-1 p-3 rounded-xl bg-gray-100 dark:bg-gray-700 text-base text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 resize-none" placeholder="e.g., Create a study schedule for my calculus final..." rows="1"></textarea>
-                                <button id="send-ai-chat-btn" class="px-5 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 disabled:bg-indigo-400">Send</button>
+                                <button id="send-ai-chat-btn" class="px-5 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 disabled:bg-indigo-400">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                                    </svg>
+                                </button>
                                 <div id="ai-chat-loading-spinner" class="spinner hidden"></div>
                             </div>
                         </div>
@@ -425,9 +500,137 @@
             </div>
 
             <div id="extracurriculars-page" class="page-content">
-                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Extracurricular Planner</h1>
-                  <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 text-center">
-                    <p class="text-gray-500">This feature is coming soon!</p>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Extracurricular Planner</h1>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Academic Clubs -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 card-hover">
+                        <div class="w-12 h-12 gradient-bg-3 rounded-xl flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.84L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.84l-7-3z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-3">🎓 Academic Clubs</h3>
+                        <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                            <li>• National Honor Society</li>
+                            <li>• Math/Science Olympiad</li>
+                            <li>• Debate Team</li>
+                            <li>• Model UN</li>
+                            <li>• Academic Decathlon</li>
+                            <li>• Quiz Bowl</li>
+                        </ul>
+                    </div>
+
+                    <!-- Leadership -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 card-hover">
+                        <div class="w-12 h-12 gradient-bg-4 rounded-xl flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-3">👑 Leadership</h3>
+                        <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                            <li>• Student Government</li>
+                            <li>• Class President/Officer</li>
+                            <li>• Club Leadership Roles</li>
+                            <li>• Peer Tutoring</li>
+                            <li>• Mentorship Programs</li>
+                            <li>• Event Organization</li>
+                        </ul>
+                    </div>
+
+                    <!-- Arts & Creativity -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 card-hover">
+                        <div class="w-12 h-12 gradient-bg-2 rounded-xl flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-3">🎨 Arts & Creativity</h3>
+                        <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                            <li>• Theater/Drama Club</li>
+                            <li>• Band/Orchestra/Choir</li>
+                            <li>• Art Club</li>
+                            <li>• Photography Club</li>
+                            <li>• Creative Writing</li>
+                            <li>• Film Club</li>
+                        </ul>
+                    </div>
+
+                    <!-- STEM & Technology -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 card-hover">
+                        <div class="w-12 h-12 gradient-bg rounded-xl flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-3">🔬 STEM & Technology</h3>
+                        <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                            <li>• Robotics Team</li>
+                            <li>• Computer Science Club</li>
+                            <li>• Science Fair</li>
+                            <li>• Engineering Club</li>
+                            <li>• Coding Competitions</li>
+                            <li>• Environmental Club</li>
+                        </ul>
+                    </div>
+
+                    <!-- Sports & Fitness -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 card-hover">
+                        <div class="w-12 h-12 gradient-bg-5 rounded-xl flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-3">⚽ Sports & Fitness</h3>
+                        <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                            <li>• Varsity/JV Sports</li>
+                            <li>• Track & Field</li>
+                            <li>• Swimming</li>
+                            <li>• Tennis/Golf</li>
+                            <li>• Martial Arts</li>
+                            <li>• Intramural Sports</li>
+                        </ul>
+                    </div>
+
+                    <!-- Community Service -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 card-hover">
+                        <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-teal-600 rounded-xl flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-3">❤️ Community Service</h3>
+                        <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                            <li>• Key Club</li>
+                            <li>• Volunteer Work</li>
+                            <li>• Community Gardens</li>
+                            <li>• Food Bank/Soup Kitchen</li>
+                            <li>• Hospital Volunteering</li>
+                            <li>• Habitat for Humanity</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mt-12 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-8 text-white">
+                    <h2 class="text-2xl font-bold mb-4">💡 Tips for Choosing Extracurriculars</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-2">Quality Over Quantity</h3>
+                            <p class="text-indigo-100">Focus on 3-5 activities you're passionate about rather than joining everything.</p>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold mb-2">Show Leadership</h3>
+                            <p class="text-indigo-100">Aim for leadership positions or start your own club/initiative.</p>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold mb-2">Demonstrate Impact</h3>
+                            <p class="text-indigo-100">Track your achievements and the positive changes you've made.</p>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold mb-2">Align with Goals</h3>
+                            <p class="text-indigo-100">Choose activities that complement your academic and career interests.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -460,4 +663,3 @@
     <script type="module" src="app.js"></script>
 </body>
 </html>
-what extracurriculars can high schoolers do?
