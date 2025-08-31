@@ -1,2 +1,8 @@
+# Node.js dependencies
 node_modules
+
+# Environment variables
 .env
+
+# Google Cloud secret file
+client_secret.json
